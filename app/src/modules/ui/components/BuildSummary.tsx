@@ -27,7 +27,9 @@ export default function BuildSummary() {
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(shareUrl)
-    } catch {}
+    } catch {
+      // Intentionally ignore copy errors
+    }
   }
 
   return (
