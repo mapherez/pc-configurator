@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Provider } from 'react-redux'
+import I18nProvider from './modules/i18n/I18nProvider'
 import PartList from './modules/ui/components/PartList'
 import BuildSummary from './modules/ui/components/BuildSummary'
 import Header from './modules/ui/components/Header'
@@ -54,7 +55,9 @@ function AppContent() {
 function App() {
   return (
     <Provider store={store}>
-      <AppContent />
+      <I18nProvider>
+        <AppContent />
+      </I18nProvider>
     </Provider>
   )
 }

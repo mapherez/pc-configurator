@@ -1,11 +1,11 @@
 import type { ChangeEvent } from 'react'
-import { useI18n } from '../../i18n/i18n'
-import { useAppSelector } from '../../../store/hooks'
+import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import type { RootState } from '../../../store/index'
+import { setSettings as setGlobalSettings } from '../../settings/settingsSlice'
 
 export default function LanguageSwitcher() {
-  const { updateLocale } = useI18n()
-  const settings = useAppSelector((state: RootState) => state.i18n.settings)
+  const dispatch = useAppDispatch()
+  const settings = useAppSelector((state: RootState) => state.settings.settings)
   
   // Don't render if no language options available
   if (!settings.languages?.length) {
@@ -19,7 +19,8 @@ export default function LanguageSwitcher() {
 
   function onChange(e: ChangeEvent<HTMLSelectElement>) {
     const lang = e.target.value
-    updateLocale(lang)
+    // Update global settings.language; I18nProvider syncs the locale strings
+    dispatch(setGlobalSettings({ ...settings, language: lang }))
   }
 
   return (

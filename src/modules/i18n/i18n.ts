@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import defaultLocale from '../../../settings/default.locale.json'
 import type { LocaleDict } from '../settings/types'
 import { useAppSelector, useAppDispatch } from '../../store/hooks'
@@ -26,7 +26,8 @@ export function getLocale(language: string): LocaleDict {
 
 export function useI18n() {
   const dispatch = useAppDispatch()
-  const settings = useAppSelector((state) => state.i18n.settings)
+  // Source language/currency from global settings slice
+  const settings = useAppSelector((state) => state.settings.settings)
   const locale = useAppSelector((state) => state.i18n.locale)
 
   const t = useCallback(
@@ -77,6 +78,13 @@ export function useI18n() {
     const newLocale = getLocale(language)
     dispatch(setLocale(newLocale))
   }, [dispatch])
+
+  // Keep locale in sync with current settings.language
+  useEffect(() => {
+    if (!settings?.language) return
+    const newLocale = getLocale(settings.language)
+    dispatch(setLocale(newLocale))
+  }, [dispatch, settings?.language])
 
   return { t, tn, formatCurrency, formatNumber, updateLocale }
 }
