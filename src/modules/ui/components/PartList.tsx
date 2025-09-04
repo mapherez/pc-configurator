@@ -40,7 +40,7 @@ const INDEX_BY_CATEGORY: Record<string, Record<string, Part>> = Object.fromEntri
 // currency formatting moved to i18n: formatCurrency
 
 export function PartList() {
-  const { t, formatCurrency } = useI18n()
+  const { t, tn, formatCurrency } = useI18n()
   const dispatch = useAppDispatch()
   const selected = useAppSelector((state) => state.build.selected)
   const setPartAction = (category: Category, partId: string) => dispatch(setPart({ category, partId }))
@@ -172,7 +172,7 @@ export function PartList() {
       <main>
         <div className="flex justify-between items-center">
           <h2 className="mt-0">{t('PARTS')}</h2>
-          <div className="opacity-80">{t('ITEMS_COUNT', { count: String(filtered.length) })}</div>
+          <div className="opacity-80">{tn('ITEMS_COUNT', filtered.length)}</div>
         </div>
         <ul className="list-none p-0 m-0">
           {filtered.map((p) => {

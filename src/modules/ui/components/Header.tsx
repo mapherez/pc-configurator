@@ -1,14 +1,14 @@
 import ThemeToggle from './ThemeToggle'
 import LanguageSwitcher from './LanguageSwitcher'
 import { useI18n } from '../../i18n/i18n'
-import { useAppSelector, useAppDispatch } from '../../../store/hooks'
+import { useAppDispatch } from '../../../store/hooks'
 import { reset } from '../../build/buildSlice'
-import type { RootState } from '../../../store/index'
+import { useSettings } from '../../settings/settings'
 
 export default function Header() {
   const dispatch = useAppDispatch()
   const { t } = useI18n()
-  const market = useAppSelector((state: RootState) => state.i18n.market)
+  const { market } = useSettings()
   const resetAction = () => dispatch(reset())
 
   return (

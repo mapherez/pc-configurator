@@ -14,7 +14,8 @@
   "FILTERS": "Filters",
 
   "INCOMPATIBLE": "Incompatible",
-  "ITEMS_COUNT": "{count} items",
+  "ITEMS_COUNT_one": "{{count}} item",
+  "ITEMS_COUNT_other": "{{count}} items",
 
   "MAX_PRICE": "Max price",
   "MIN_PRICE": "Min price",
