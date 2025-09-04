@@ -6,8 +6,13 @@ import type { RootState } from '../../../store/index'
 export default function LanguageSwitcher() {
   const { updateLocale } = useI18n()
   const settings = useAppSelector((state: RootState) => state.i18n.settings)
-  const availableLanguages = settings.languages ?? []
-  const options = availableLanguages.map((code: string) => ({
+  
+  // Don't render if no language options available
+  if (!settings.languages?.length) {
+    return null
+  }
+
+  const options = settings.languages.map((code: string) => ({
     value: code,
     label: new Intl.DisplayNames([settings.language], { type: 'language' }).of(code) ?? code
   }))

@@ -41,12 +41,28 @@ for (const market of MARKET_SETTINGS.keys()) {
 // Load resources
 export function getSettings(market: string) {
   const foundSettings = MARKET_SETTINGS.get(market.toLowerCase())
-  const foundLocale = LANGUAGE_LOCALES.get(foundSettings?.language ?? '')
+  
+  // If no market settings found, use default settings with env language
+  if (!foundSettings) {
+    return {
+      settings: { ...defaultSettings, language: env.language },
+      locale: LANGUAGE_LOCALES.get(env.language) ?? defaultLocale
+    }
+  }
 
-  const mergedSettings = { ...defaultSettings, ...(foundSettings ?? {}) }
-  const effectiveLocale = foundLocale ?? defaultLocale
+  // Merge settings, giving priority to market settings
+  const mergedSettings = { ...defaultSettings, ...foundSettings }
+  
+  // If market doesn't specify languages array, use only the env language
+  if (!foundSettings.languages) {
+    mergedSettings.language = env.language
+    delete mergedSettings.languages
+  }
 
-  return { settings: mergedSettings, locale: effectiveLocale }
+  // Get locale for the active language
+  const foundLocale = LANGUAGE_LOCALES.get(mergedSettings.language) ?? defaultLocale
+
+  return { settings: mergedSettings, locale: foundLocale }
 }
 
 export function getLocale(language: string) {

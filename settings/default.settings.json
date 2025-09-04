@@ -1,8 +1,4 @@
 {
-  "language": "pt-PT",
-  "currency": "EUR",
-  "languages": [
-    "pt-PT",
-    "en-US"
-  ]
+  "language": "en-US",
+  "currency": "USD"
 }
