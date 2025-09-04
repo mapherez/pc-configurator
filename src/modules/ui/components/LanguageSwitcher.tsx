@@ -7,9 +7,9 @@ export default function LanguageSwitcher() {
   const { updateLocale } = useI18n()
   const settings = useAppSelector((state: RootState) => state.i18n.settings)
   const availableLanguages = settings.languages ?? []
-  const options = availableLanguages.map((code: string) => ({ 
-    value: code, 
-    label: new Intl.DisplayNames([settings.language], { type: 'language' }).of(code) ?? code 
+  const options = availableLanguages.map((code: string) => ({
+    value: code,
+    label: new Intl.DisplayNames([settings.language], { type: 'language' }).of(code) ?? code
   }))
 
   function onChange(e: ChangeEvent<HTMLSelectElement>) {

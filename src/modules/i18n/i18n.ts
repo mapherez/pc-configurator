@@ -21,13 +21,13 @@ const localeModules = import.meta.glob<LocaleDict>('../../../settings/locale/*.j
 const MARKET_SETTINGS = new Map<string, Settings>()
 for (const [path, mod] of Object.entries(settingsModules)) {
   const m = /settings\/market\/(.+)\.settings\.json$/.exec(path)
-  if (m) MARKET_SETTINGS.set(m[1].toUpperCase(), mod)
+  if (m) MARKET_SETTINGS.set(m[1], mod)
 }
 
 const LANGUAGE_LOCALES = new Map<string, LocaleDict>()
 for (const [path, mod] of Object.entries(localeModules)) {
   const m = /settings\/locale\/(.+)\.json$/.exec(path)
-  if (m) LANGUAGE_LOCALES.set(m[1].toUpperCase(), mod)
+  if (m) LANGUAGE_LOCALES.set(m[1], mod)
 }
 
 // Map from href to market
@@ -40,8 +40,8 @@ for (const market of MARKET_SETTINGS.keys()) {
 
 // Load resources
 export function getSettings(market: string) {
-  const foundSettings = MARKET_SETTINGS.get(market.toUpperCase())
-  const foundLocale = LANGUAGE_LOCALES.get(foundSettings?.language.toUpperCase() ?? '')
+  const foundSettings = MARKET_SETTINGS.get(market.toLowerCase())
+  const foundLocale = LANGUAGE_LOCALES.get(foundSettings?.language ?? '')
 
   const mergedSettings = { ...defaultSettings, ...(foundSettings ?? {}) }
   const effectiveLocale = foundLocale ?? defaultLocale
@@ -50,7 +50,7 @@ export function getSettings(market: string) {
 }
 
 export function getLocale(language: string) {
-  const foundLocale = LANGUAGE_LOCALES.get(language.toUpperCase())
+  const foundLocale = LANGUAGE_LOCALES.get(language)
   return foundLocale ?? defaultLocale
 }
 
@@ -65,7 +65,7 @@ export function guessMarket() {
   // Otherwise try to parse first part as market code, e.g. /us/home
   const m = /^\/([a-z]{2})\//.exec(pathname)
   if (m) {
-    const market = m[1].toUpperCase()
+    const market = m[1].toLowerCase()
     if (MARKET_SETTINGS.has(market)) return market
   }
 
@@ -98,8 +98,9 @@ export function useI18n() {
 
   const updateLocale = useCallback((language: string) => {
     const newLocale = getLocale(language)
+    dispatch(setSettings({ ...settings, language }))
     dispatch(setLocale(newLocale))
-  }, [dispatch])
+  }, [dispatch, settings])
 
   const updateMarket = useCallback((newMarket: string) => {
     const { settings: newSettings, locale: newLocale } = getSettings(newMarket)
