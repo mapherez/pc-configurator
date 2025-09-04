@@ -2,8 +2,10 @@ import type { ChangeEvent } from 'react'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import type { RootState } from '../../../store/index'
 import { setSettings as setGlobalSettings } from '../../settings/settingsSlice'
+import { useI18n } from '../../i18n/i18n'
 
 export default function LanguageSwitcher() {
+  const { t } = useI18n()
   const dispatch = useAppDispatch()
   const settings = useAppSelector((state: RootState) => state.settings.settings)
   
@@ -12,10 +14,13 @@ export default function LanguageSwitcher() {
     return null
   }
 
-  const options = settings.languages.map((code: string) => ({
-    value: code,
-    label: new Intl.DisplayNames([settings.language], { type: 'language' }).of(code) ?? code
-  }))
+  const options = settings.languages.map((code: string) => {
+    const override = t(`LANG_NAME_${code}`)
+    const label = override !== `LANG_NAME_${code}`
+      ? override
+      : new Intl.DisplayNames([settings.language], { type: 'language' }).of(code) ?? code
+    return { value: code, label }
+  })
 
   function onChange(e: ChangeEvent<HTMLSelectElement>) {
     const lang = e.target.value

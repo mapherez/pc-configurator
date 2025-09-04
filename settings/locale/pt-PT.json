@@ -16,6 +16,8 @@
   "INCOMPATIBLE": "Incompatível",
   "ITEMS_COUNT_one": "{{count}} item",
   "ITEMS_COUNT_other": "{{count}} itens",
+  "LANG_NAME_en-US": "Inglês Americano",
+  "LANG_NAME_pt-PT": "Português Europeu",
 
   "MAX_PRICE": "Preço máx.",
   "MIN_PRICE": "Preço mín.",
