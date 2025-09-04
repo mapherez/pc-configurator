@@ -5,17 +5,20 @@ import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
 import { i18nSlice } from '../../../../modules/i18n/i18nSlice'
 import { buildSlice } from '../../../../modules/build/buildSlice'
+import { settingsSlice } from '../../../../modules/settings/settingsSlice'
 import defaultSettings from '../../../../../settings/default.settings.json'
 import defaultLocale from '../../../../../settings/default.locale.json'
 import PartList from '../../../../modules/ui/components/PartList'
 import BuildSummary from '../../../../modules/ui/components/BuildSummary'
+import I18nProvider from '../../../../modules/i18n/I18nProvider'
 
 // Create a test store
 const store = configureStore({
   reducer: {
     i18n: i18nSlice.reducer,
-    build: buildSlice.reducer
-  }
+    settings: settingsSlice.reducer,
+    build: buildSlice.reducer,
+  },
 })
 
 describe('UI smoke: PartList + BuildSummary', () => {
@@ -24,7 +27,7 @@ describe('UI smoke: PartList + BuildSummary', () => {
     window.history.replaceState(null, '', '/')
 
     // Reset store to initial state
-    store.dispatch(i18nSlice.actions.setSettings({ ...defaultSettings, language: 'en-US' }))
+    store.dispatch(settingsSlice.actions.setSettings({ ...defaultSettings, language: 'pt-PT', currency: 'EUR' }))
     store.dispatch(i18nSlice.actions.setLocale(defaultLocale))
   })
 
@@ -32,10 +35,12 @@ describe('UI smoke: PartList + BuildSummary', () => {
     const user = userEvent.setup()
     render(
       <Provider store={store}>
-        <div>
-          <PartList />
-          <BuildSummary />
-        </div>
+        <I18nProvider>
+          <div>
+            <PartList />
+            <BuildSummary />
+          </div>
+        </I18nProvider>
       </Provider>
     )
 
