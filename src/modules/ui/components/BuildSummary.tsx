@@ -9,7 +9,7 @@ import {
 } from '../../build/selectors'
 import { evaluateBuild } from '../../build/compatibility'
 import type { Part } from '../../catalog/schema'
-import { serializeSelectedToUrl, applySelectedToUrl } from '../../build/share'
+import { serializeSelectedToUrl } from '../../build/share'
 import { useI18n } from '../../i18n/i18n'
 
 export default function BuildSummary() {
@@ -17,12 +17,7 @@ export default function BuildSummary() {
   const dispatch = useAppDispatch()
   const selected = useAppSelector((state) => state.build.selected)
   const removePartAction = (category: Category) => dispatch(removePart({ category }))
-  const resetAction = () => {
-    dispatch(reset())
-    const url = new URL(window.location.href)
-    applySelectedToUrl(url, {})
-    window.history.replaceState(null, '', url)
-  }
+  const resetAction = () => dispatch(reset())
 
   const parts = useMemo<Part[]>(() => getSelectedParts(selected), [selected])
   const totals = useMemo(() => calcTotals(parts), [parts])

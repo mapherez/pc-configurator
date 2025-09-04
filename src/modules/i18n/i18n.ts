@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useCallback, useEffect } from 'react'
 import defaultLocale from '../../../settings/default.locale.json'
 import type { LocaleDict } from '../settings/types'
@@ -39,21 +40,19 @@ export function useI18n() {
     [locale]
   )
 
-  const formatCurrency = useCallback(
-    (value: number) => {
-      return new Intl.NumberFormat(settings.language, {
+  const numberFormat = useMemo(() => new Intl.NumberFormat(settings.language), [settings.language])
+  const currencyFormat = useMemo(
+    () =>
+      new Intl.NumberFormat(settings.language, {
         style: 'currency',
         currency: settings.currency,
         minimumFractionDigits: 2,
-      }).format(value)
-    },
+      }),
     [settings.currency, settings.language]
   )
 
-  const formatNumber = useCallback(
-    (value: number) => new Intl.NumberFormat(settings.language).format(value),
-    [settings.language]
-  )
+  const formatCurrency = useCallback((value: number) => currencyFormat.format(value), [currencyFormat])
+  const formatNumber = useCallback((value: number) => numberFormat.format(value), [numberFormat])
 
   const tn = useCallback(
     (key: string, count: number, params?: Record<string, string | number>) => {
@@ -66,12 +65,12 @@ export function useI18n() {
         (defaultLocale as Record<string, string>)[key] ??
         keyVariant
       const mergedParams: Record<string, string | number> = {
-        count: formatNumber(count),
+        count: numberFormat.format(count),
         ...(params ?? {}),
       }
       return interpolate(template, mergedParams)
     },
-    [locale, settings.language, formatNumber]
+    [locale, settings.language, numberFormat]
   )
 
   const updateLocale = useCallback((language: string) => {

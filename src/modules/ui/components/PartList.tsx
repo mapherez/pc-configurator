@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { setPart } from '../../build/buildSlice'
 import type { Part } from '../../catalog/schema'
 import { checkCompatibility, extractSpecs, type SpecsBag } from '../../build/compatibility'
-import { applySelectedToUrl } from '../../build/share'
 import { useI18n } from '../../i18n/i18n'
 
 // Import mock data (initial offline catalog)
@@ -87,25 +86,7 @@ export function PartList() {
       .filter((p) => (q ? `${p.name} ${p.brand} ${p.sku}`.toLowerCase().includes(q) : true))
   }, [items, brand, minPrice, maxPrice, query])
 
-  // Keep URL in sync when selection changes (replace state)
-  const didInitialSync = useRef(false)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const hasAnyCategoryParam = Array.from(params.keys()).some((k) =>
-      (AVAILABLE_CATEGORIES as readonly string[]).includes(k)
-    )
-    const isEmptySelection = Object.keys(selected).length === 0
-
-    // On first run, avoid wiping URL if it already has selection
-    if (!didInitialSync.current) {
-      didInitialSync.current = true
-      if (isEmptySelection && hasAnyCategoryParam) return
-    }
-
-    const url = new URL(window.location.href)
-    applySelectedToUrl(url, selected)
-    window.history.replaceState(null, '', url)
-  }, [selected])
+  // URL syncing moved to UrlSyncProvider
 
   return (
     <div className="grid grid-cols-[280px_1fr] gap-4">

@@ -9,13 +9,14 @@ import { parseSelectedFromSearch } from './modules/build/share'
 import { useAppDispatch } from './store/hooks'
 import { setPart } from './modules/build/buildSlice'
 import type { Category } from './modules/build/buildSlice'
-import { setMarket } from './modules/settings/settingsSlice'
+import { setMarket, setSettings } from './modules/settings/settingsSlice'
+import { getMarketSettings } from './modules/settings/settings'
+import UrlSyncProvider from './modules/app/UrlSyncProvider'
 
 function AppContent() {
   const dispatch = useAppDispatch()
   
-  // Hydrate selection from URL on first load
-  // Hydrate selection from URL on first load
+  // Hydrate selection and settings from URL on first load
   useEffect(() => {
     // Load initial state from URL params
     const initial = parseSelectedFromSearch(window.location.search)
@@ -28,11 +29,16 @@ function AppContent() {
 
     // Load initial market/settings from URL or browser locale
     const params = new URLSearchParams(window.location.search)
-    const userLocale = params.get('locale') || navigator.language
-    const userMarket = userLocale.split('-')[1]?.toLowerCase() || 'us'
-    if (userMarket) {
-      dispatch(setMarket(userMarket))
-    }
+    const localeParam = params.get('locale') || undefined
+    const marketParam = params.get('market') || undefined
+
+    const navLang = navigator.language
+    const defaultMarket = navLang.split('-')[1]?.toLowerCase() || 'us'
+    const market = (marketParam || defaultMarket)
+    dispatch(setMarket(market))
+    const baseSettings = getMarketSettings(market)
+    const merged = { ...baseSettings, ...(localeParam ? { language: localeParam } : {}) }
+    dispatch(setSettings(merged))
   }, [dispatch])
 
   return (
@@ -56,7 +62,9 @@ function App() {
   return (
     <Provider store={store}>
       <I18nProvider>
-        <AppContent />
+        <UrlSyncProvider>
+          <AppContent />
+        </UrlSyncProvider>
       </I18nProvider>
     </Provider>
   )
