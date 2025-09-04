@@ -1,0 +1,64 @@
+{
+  "APP_TITLE": "PC Configurator",
+
+  "BRAND": "Brand",
+  "BRAND_ALL": "All",
+  "BUILD_SUMMARY": "Build Summary",
+
+  "CATEGORY": "Category",
+  "CLEAR_BUILD": "Clear build",
+  "COMPATIBLE": "Compatible",
+  "COPY_LINK": "Copy link",
+
+  "FAIL": "Fail",
+  "FILTERS": "Filters",
+
+  "INCOMPATIBLE": "Incompatible",
+  "ITEMS_COUNT": "{count} items",
+
+  "MAX_PRICE": "Max price",
+  "MIN_PRICE": "Min price",
+
+  "NAV_BUILD": "Build",
+  "NAV_GITHUB": "GitHub",
+  "NAV_HOME": "Home",
+  "NO_PARTS": "No parts selected.",
+
+  "OK": "OK",
+  "OVERALL_COMPAT": "Overall compatibility:",
+
+  "PARTS": "Parts",
+  "PSU_RECOMMENDED": "Recommended PSU",
+
+  "REASON_CPU_MOBO_SOCKET_INCOMPATIBLE": "CPU ↔ MOBO socket incompatible",
+  "REASON_FORM_FACTOR_NOT_SUPPORTED": "Form factor not supported",
+  "REASON_GPU_TOO_LONG": "GPU too long",
+  "REASON_GPU_TOO_LONG_FOR_CASE": "GPU too long for the case",
+  "REASON_MOBO_FORM_FACTOR_NOT_SUPPORTED_BY_CASE": "MOBO form factor not supported by the case",
+  "REASON_PSU_INSUFFICIENT": "Insufficient wattage",
+  "REASON_PSU_INSUFFICIENT_WITH_MARGIN": "PSU wattage insufficient (includes margin)",
+  "REASON_RAM_MOBO_TYPE_INCOMPATIBLE": "RAM ↔ MOBO type incompatible",
+  "REASON_RAM_TYPE_DIFFERENT": "Different RAM type",
+  "REASON_SOCKETS_DIFFERENT": "Different sockets",
+  "REMOVE": "Remove",
+  "RULE_CPU_MOBO_SOCKET": "CPU ↔ MOBO socket",
+  "RULE_GPU_CASE_LENGTH": "GPU ↔ CASE length",
+  "RULE_MOBO_CASE_FORM_FACTOR": "MOBO ↔ CASE form factor",
+  "RULE_PSU_WATTAGE": "PSU wattage",
+  "RULE_RAM_MOBO_TYPE": "RAM ↔ MOBO type",
+
+  "SEARCH": "Search",
+  "SEARCH_PLACEHOLDER": "name/sku",
+  "SELECT": "Select",
+  "SELECTED": "Selected",
+  "SHARE_BUILD": "Share build",
+  "SUBTOTAL": "Subtotal",
+
+  "TDP_ESTIMATE": "TDP estimate (CPU+GPU)",
+  "THEME_DARK": "Dark",
+  "THEME_LIGHT": "Light",
+  "THEME_TOGGLE": "Toggle theme",
+  "TOTAL": "Total",
+
+  "VAT_23": "VAT (23%)"
+}

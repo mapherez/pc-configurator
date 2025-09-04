@@ -1,0 +1,23 @@
+[
+  {
+    "id": "ram-ddr5-32-2x16",
+    "sku": "DDR5-6000-32",
+    "name": "DDR5 32GB (2x16) 6000MHz",
+    "brand": "G.Skill",
+    "category": "ram",
+    "price": 119.99,
+    "images": ["/images/ram/ddr5-6000-32.png"],
+    "specs": { "type": "DDR5", "size_gb": 32, "sticks": 2 }
+  },
+  {
+    "id": "ram-ddr5-64-2x32",
+    "sku": "DDR5-6000-64",
+    "name": "DDR5 64GB (2x32) 6000MHz",
+    "brand": "Corsair",
+    "category": "ram",
+    "price": 229.99,
+    "images": ["/images/ram/ddr5-6000-64.png"],
+    "specs": { "type": "DDR5", "size_gb": 64, "sticks": 2 }
+  }
+]
+

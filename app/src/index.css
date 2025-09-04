@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+:root { color-scheme: dark light; }
+
+/* Tailwind v4: make `dark:` variant respond to `.dark` class on html */
+@custom-variant dark (&:where(.dark, .dark *));
