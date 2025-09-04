@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { useBuildStore } from '../../build/store'
+import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { setPart } from '../../build/buildSlice'
 import type { Part } from '../../catalog/schema'
 import { checkCompatibility, extractSpecs, type SpecsBag } from '../../build/compatibility'
 import { applySelectedToUrl } from '../../build/share'
@@ -40,8 +41,9 @@ const INDEX_BY_CATEGORY: Record<string, Record<string, Part>> = Object.fromEntri
 
 export function PartList() {
   const { t, formatCurrency } = useI18n()
-  const setPart = useBuildStore((s) => s.setPart)
-  const selected = useBuildStore((s) => s.selected)
+  const dispatch = useAppDispatch()
+  const selected = useAppSelector((state) => state.build.selected)
+  const setPartAction = (category: Category, partId: string) => dispatch(setPart({ category, partId }))
 
   const [category, setCategory] = useState<Category>('cpu')
   const [brand, setBrand] = useState<string>('')
@@ -88,7 +90,7 @@ export function PartList() {
   // Keep URL in sync when selection changes (replace state)
   useMemo(() => {
     const url = new URL(window.location.href)
-    applySelectedToUrl(url, selected as unknown as Partial<Record<Category, string>>)
+    applySelectedToUrl(url, selected)
     window.history.replaceState(null, '', url)
     return undefined
   }, [selected])
@@ -170,7 +172,7 @@ export function PartList() {
       <main>
         <div className="flex justify-between items-center">
           <h2 className="mt-0">{t('PARTS')}</h2>
-          <div className="opacity-80">{t('ITEMS_COUNT', { count: filtered.length })}</div>
+          <div className="opacity-80">{t('ITEMS_COUNT', { count: String(filtered.length) })}</div>
         </div>
         <ul className="list-none p-0 m-0">
           {filtered.map((p) => {
@@ -204,7 +206,7 @@ export function PartList() {
                       {compat.ok === null ? '—' : compat.ok ? t('COMPATIBLE') : t('INCOMPATIBLE')}
                     </span>
                     <div className="min-w-[96px] text-right">{formatCurrency(p.price)}</div>
-                    <button onClick={() => setPart(p.category as Category, p.id)}>
+                    <button onClick={() => setPartAction(p.category as Category, p.id)}>
                       {isSelected ? t('SELECTED') : t('SELECT')}
                     </button>
                   </div>

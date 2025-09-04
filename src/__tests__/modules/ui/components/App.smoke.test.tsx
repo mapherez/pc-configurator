@@ -1,22 +1,42 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import PartList from './PartList'
-import BuildSummary from './BuildSummary'
+import { Provider } from 'react-redux'
+import { configureStore } from '@reduxjs/toolkit'
+import { i18nSlice } from '../../../../modules/i18n/i18nSlice'
+import { buildSlice } from '../../../../modules/build/buildSlice'
+import defaultSettings from '../../../../../settings/default.settings.json'
+import defaultLocale from '../../../../../settings/default.locale.json'
+import PartList from '../../../../modules/ui/components/PartList'
+import BuildSummary from '../../../../modules/ui/components/BuildSummary'
+
+// Create a test store
+const store = configureStore({
+  reducer: {
+    i18n: i18nSlice.reducer,
+    build: buildSlice.reducer
+  }
+})
 
 describe('UI smoke: PartList + BuildSummary', () => {
   beforeEach(() => {
     // ensure clean URL params between tests
     window.history.replaceState(null, '', '/')
+
+    // Reset store to initial state
+    store.dispatch(i18nSlice.actions.setSettings({ ...defaultSettings, language: 'en-US' }))
+    store.dispatch(i18nSlice.actions.setLocale(defaultLocale))
   })
 
   it('selects CPU and shows in summary; flags incompatible MOBO', async () => {
     const user = userEvent.setup()
     render(
-      <div>
-        <PartList />
-        <BuildSummary />
-      </div>
+      <Provider store={store}>
+        <div>
+          <PartList />
+          <BuildSummary />
+        </div>
+      </Provider>
     )
 
     // Select a CPU (default category is cpu)

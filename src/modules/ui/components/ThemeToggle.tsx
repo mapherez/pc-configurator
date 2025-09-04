@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { localize as t } from '../../i18n/i18n'
+import { useI18n } from '../../i18n/i18n'
 
 function getInitialTheme(): 'dark' | 'light' {
   const saved = localStorage.getItem('theme') as 'dark' | 'light' | null
@@ -9,6 +9,7 @@ function getInitialTheme(): 'dark' | 'light' {
 }
 
 export default function ThemeToggle() {
+  const { t } = useI18n()
   const [theme, setTheme] = useState<'dark' | 'light'>(getInitialTheme)
 
   useEffect(() => {

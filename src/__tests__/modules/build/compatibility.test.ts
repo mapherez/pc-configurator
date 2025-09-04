@@ -9,8 +9,8 @@ import {
   evaluateBuild,
   recommendedPsuWattage,
   type SpecsBag,
-} from './compatibility'
-import type { Part } from '../catalog/schema'
+} from '../../../modules/build/compatibility'
+import type { Part } from '../../../modules/catalog/schema'
 
 describe('compatibility rules', () => {
   it('CPU ↔ MOBO socket', () => {

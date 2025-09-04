@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
-import { useBuildStore } from '../../build/store'
+import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { removePart, reset, type Category } from '../../build/buildSlice'
 import {
   calcTotals,
   getSelectedParts,
@@ -13,11 +14,12 @@ import { useI18n } from '../../i18n/i18n'
 
 export default function BuildSummary() {
   const { t, formatCurrency } = useI18n()
-  const selected = useBuildStore((s) => s.selected)
-  const removePart = useBuildStore((s) => s.removePart)
-  const reset = useBuildStore((s) => s.reset)
+  const dispatch = useAppDispatch()
+  const selected = useAppSelector((state) => state.build.selected)
+  const removePartAction = (category: Category) => dispatch(removePart({ category }))
+  const resetAction = () => dispatch(reset())
 
-  const parts = useMemo(() => getSelectedParts(selected), [selected])
+  const parts = useMemo<Part[]>(() => getSelectedParts(selected), [selected])
   const totals = useMemo(() => calcTotals(parts), [parts])
   const specs = useMemo(() => buildSpecsFromSelection(selected), [selected])
   const compat = useMemo(() => evaluateBuild(specs), [specs])
@@ -36,7 +38,7 @@ export default function BuildSummary() {
     <section className="border border-neutral-300 dark:border-neutral-700 rounded-lg p-4">
       <header className="flex items-center justify-between">
         <h2 className="m-0">{t('BUILD_SUMMARY')}</h2>
-        <button onClick={reset}>{t('CLEAR_BUILD')}</button>
+        <button onClick={resetAction}>{t('CLEAR_BUILD')}</button>
       </header>
 
       <div className="mt-3">
@@ -54,7 +56,7 @@ export default function BuildSummary() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="min-w-[96px] text-right">{formatCurrency(p.price)}</div>
-                  <button onClick={() => removePart(p.category as Part['category'])}>{t('REMOVE')}</button>
+                  <button onClick={() => removePartAction(p.category as Category)}>{t('REMOVE')}</button>
                 </div>
               </li>
             ))}

@@ -6,7 +6,9 @@ import type {
   PsuSpecsT,
   Part,
 } from '../catalog/schema'
-import { localize as t } from '../i18n/i18n'
+import defaultLocale from '../../../settings/default.locale.json'
+
+const t = (key: keyof typeof defaultLocale) => defaultLocale[key]
 
 export type SpecsBag = {
   cpu?: CpuSpecsT

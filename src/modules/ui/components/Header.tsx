@@ -1,12 +1,15 @@
 import ThemeToggle from './ThemeToggle'
-import { useBuildStore } from '../../build/store'
 import LanguageSwitcher from './LanguageSwitcher'
-import { useI18n, useI18nStore } from '../../i18n/i18n'
+import { useI18n } from '../../i18n/i18n'
+import { useAppSelector, useAppDispatch } from '../../../store/hooks'
+import { reset } from '../../build/buildSlice'
+import type { RootState } from '../../../store/index'
 
 export default function Header() {
-  const reset = useBuildStore((s) => s.reset)
+  const dispatch = useAppDispatch()
   const { t } = useI18n()
-  const market = useI18nStore((s) => s.market)
+  const market = useAppSelector((state: RootState) => state.i18n.market)
+  const resetAction = () => dispatch(reset())
 
   return (
     <header className="sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-neutral-900/60 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
@@ -29,7 +32,7 @@ export default function Header() {
             {t('NAV_GITHUB')}
           </a>
           <button
-            onClick={reset}
+            onClick={resetAction}
             className="px-3 py-1.5 rounded-md border border-neutral-300 dark:border-neutral-700 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
           >
             {t('CLEAR_BUILD')}
