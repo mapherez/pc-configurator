@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://teu-username.github.io/nome-do-repo",
+  "homepage": "https://mapherez.github.io/pc-configurator",
   "scripts": {
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
