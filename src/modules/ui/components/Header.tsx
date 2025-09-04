@@ -9,7 +9,7 @@ import { applySelectedToUrl } from '../../build/share'
 export default function Header() {
   const dispatch = useAppDispatch()
   const { t } = useI18n()
-  const { market } = useSettings()
+  const { market, settings } = useSettings()
   const resetAction = () => {
     dispatch(reset())
     const url = new URL(window.location.href)
@@ -31,7 +31,7 @@ export default function Header() {
           <LanguageSwitcher />
           <a
             className="px-3 py-1.5 rounded-md border border-neutral-300 dark:border-neutral-700 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
-            href="https://github.com/"
+            href={settings.gitHubPages || 'https://github.com/'}
             target="_blank"
             rel="noreferrer"
           >

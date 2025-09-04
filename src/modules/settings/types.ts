@@ -8,6 +8,7 @@ export interface Settings {
   language: string
   currency: string
   languages?: string[]
+  gitHubPages?: string
   // Component settings
   HEADER?: ComponentSettings
   FOOTER?: ComponentSettings
@@ -33,6 +34,7 @@ export interface RawMarketSettings {
   language: string
   currency: string
   languages?: string[]
+  gitHubPages?: string
   // Component settings as they appear in the file
   HEADER?: ComponentSettings
   FOOTER?: ComponentSettings

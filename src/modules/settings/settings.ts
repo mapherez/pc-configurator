@@ -54,6 +54,7 @@ export function validateSettings(settings: Settings): Settings {
     language: settings.language || env.language,
     currency: settings.currency || defaultSettings.currency,
     languages: settings.languages || [env.language],
+    gitHubPages: settings.gitHubPages || (defaultSettings as Settings).gitHubPages,
   }
 }
 
