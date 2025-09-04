@@ -4,12 +4,18 @@ import { useI18n } from '../../i18n/i18n'
 import { useAppDispatch } from '../../../store/hooks'
 import { reset } from '../../build/buildSlice'
 import { useSettings } from '../../settings/settings'
+import { applySelectedToUrl } from '../../build/share'
 
 export default function Header() {
   const dispatch = useAppDispatch()
   const { t } = useI18n()
   const { market } = useSettings()
-  const resetAction = () => dispatch(reset())
+  const resetAction = () => {
+    dispatch(reset())
+    const url = new URL(window.location.href)
+    applySelectedToUrl(url, {})
+    window.history.replaceState(null, '', url)
+  }
 
   return (
     <header className="sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-neutral-900/60 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">

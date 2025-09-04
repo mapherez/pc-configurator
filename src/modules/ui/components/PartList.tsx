@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { setPart } from '../../build/buildSlice'
 import type { Part } from '../../catalog/schema'
@@ -88,12 +88,19 @@ export function PartList() {
   }, [items, brand, minPrice, maxPrice, query])
 
   // Keep URL in sync when selection changes (replace state)
+  const didInitialSync = useRef(false)
   useEffect(() => {
-    // Avoid wiping existing URL params on initial load when selection is empty
     const params = new URLSearchParams(window.location.search)
-    const hasAnyCategoryParam = Array.from(params.keys()).some((k) => (AVAILABLE_CATEGORIES as readonly string[]).includes(k))
+    const hasAnyCategoryParam = Array.from(params.keys()).some((k) =>
+      (AVAILABLE_CATEGORIES as readonly string[]).includes(k)
+    )
     const isEmptySelection = Object.keys(selected).length === 0
-    if (isEmptySelection && hasAnyCategoryParam) return
+
+    // On first run, avoid wiping URL if it already has selection
+    if (!didInitialSync.current) {
+      didInitialSync.current = true
+      if (isEmptySelection && hasAnyCategoryParam) return
+    }
 
     const url = new URL(window.location.href)
     applySelectedToUrl(url, selected)
