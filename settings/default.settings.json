@@ -1,5 +1,13 @@
 {
-  "language": "en-US",
-  "currency": "USD",
-  "gitHubPages": "https://github.com/mapherez/pc-configurator"
+  "SETUP": {
+    "language": "en-US",
+    "currency": "USD",
+    "gitHubPages": "https://github.com/mapherez/pc-configurator"
+  },
+  "PART_LIST": {
+    "type": "radio"
+  },
+  "PART_SUMMARY": {
+    "type": "icon-button"
+  }
 }

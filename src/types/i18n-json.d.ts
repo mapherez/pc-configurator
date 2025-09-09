@@ -1,5 +1,11 @@
 declare module '*.settings.json' {
-  const value: { language: string; currency: string; languages?: string[] }
+  // Allow the app to import settings JSON files with the new structure
+  const value: {
+    SETUP?: { language?: string; currency?: string; languages?: string[]; gitHubPages?: string }
+    PART_LIST?: { type?: 'button' | 'radio' | 'checkbox' }
+    PART_SUMMARY?: { type?: 'button' | 'icon-button' }
+    [key: string]: unknown
+  }
   export default value
 }
 

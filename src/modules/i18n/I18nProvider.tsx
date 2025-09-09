@@ -5,7 +5,7 @@ import { getLocale } from './i18n'
 
 export default function I18nProvider({ children }: PropsWithChildren) {
   const dispatch = useAppDispatch()
-  const language = useAppSelector((state) => state.settings.settings.language)
+  const language = useAppSelector((state) => state.settings.settings.SETUP.language)
 
   useEffect(() => {
     if (!language) return
@@ -15,4 +15,3 @@ export default function I18nProvider({ children }: PropsWithChildren) {
 
   return <>{children}</>
 }
-

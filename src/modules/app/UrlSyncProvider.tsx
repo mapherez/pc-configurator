@@ -5,7 +5,7 @@ import { applySelectedToUrl } from '../build/share'
 export default function UrlSyncProvider({ children }: PropsWithChildren) {
   const selected = useAppSelector((s) => s.build.selected)
   const market = useAppSelector((s) => s.settings.market)
-  const language = useAppSelector((s) => s.settings.settings.language)
+  const language = useAppSelector((s) => s.settings.settings.SETUP.language)
 
   const didInitial = useRef(false)
 
@@ -37,4 +37,3 @@ export default function UrlSyncProvider({ children }: PropsWithChildren) {
 
   return <>{children}</>
 }
-

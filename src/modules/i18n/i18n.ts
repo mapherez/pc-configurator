@@ -40,15 +40,15 @@ export function useI18n() {
     [locale]
   )
 
-  const numberFormat = useMemo(() => new Intl.NumberFormat(settings.language), [settings.language])
+  const numberFormat = useMemo(() => new Intl.NumberFormat(settings.SETUP.language), [settings.SETUP.language])
   const currencyFormat = useMemo(
     () =>
-      new Intl.NumberFormat(settings.language, {
+      new Intl.NumberFormat(settings.SETUP.language, {
         style: 'currency',
-        currency: settings.currency,
+        currency: settings.SETUP.currency,
         minimumFractionDigits: 2,
       }),
-    [settings.currency, settings.language]
+    [settings.SETUP.currency, settings.SETUP.language]
   )
 
   const formatCurrency = useCallback((value: number) => currencyFormat.format(value), [currencyFormat])
@@ -56,7 +56,7 @@ export function useI18n() {
 
   const tn = useCallback(
     (key: string, count: number, params?: Record<string, string | number>) => {
-      const plural = new Intl.PluralRules(settings.language).select(count)
+      const plural = new Intl.PluralRules(settings.SETUP.language).select(count)
       const keyVariant = `${key}_${plural}`
       const template =
         (locale as Record<string, string>)[keyVariant] ??
@@ -70,7 +70,7 @@ export function useI18n() {
       }
       return interpolate(template, mergedParams)
     },
-    [locale, settings.language, numberFormat]
+    [locale, settings.SETUP.language, numberFormat]
   )
 
   const updateLocale = useCallback((language: string) => {
@@ -78,12 +78,12 @@ export function useI18n() {
     dispatch(setLocale(newLocale))
   }, [dispatch])
 
-  // Keep locale in sync with current settings.language
+  // Keep locale in sync with current settings.SETUP.language
   useEffect(() => {
-    if (!settings?.language) return
-    const newLocale = getLocale(settings.language)
+    if (!settings?.SETUP?.language) return
+    const newLocale = getLocale(settings.SETUP.language)
     dispatch(setLocale(newLocale))
-  }, [dispatch, settings?.language])
+  }, [dispatch, settings?.SETUP?.language])
 
   return { t, tn, formatCurrency, formatNumber, updateLocale }
 }

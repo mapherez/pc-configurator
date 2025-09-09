@@ -1,7 +1,5 @@
 type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends Record<string, unknown>
-    ? DeepPartial<T[P]>
-    : T[P]
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
 }
 
 /**
@@ -10,7 +8,7 @@ type DeepPartial<T> = {
  * @param source The object whose properties take precedence
  * @returns A new object with merged properties
  */
-export function deepMerge<T extends Record<string, unknown>>(
+export function deepMerge<T extends object>(
   target: T,
   source: DeepPartial<T>
 ): T {

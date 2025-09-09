@@ -7,6 +7,7 @@ import { i18nSlice } from '../../../../modules/i18n/i18nSlice'
 import { buildSlice } from '../../../../modules/build/buildSlice'
 import { settingsSlice } from '../../../../modules/settings/settingsSlice'
 import defaultSettings from '../../../../../settings/default.settings.json'
+import type { Settings } from '../../../../modules/settings/types'
 import defaultLocale from '../../../../../settings/default.locale.json'
 import PartList from '../../../../modules/ui/components/PartList'
 import BuildSummary from '../../../../modules/ui/components/BuildSummary'
@@ -27,7 +28,21 @@ describe('UI smoke: PartList + BuildSummary', () => {
     window.history.replaceState(null, '', '/')
 
     // Reset store to initial state
-    store.dispatch(settingsSlice.actions.setSettings({ ...defaultSettings, language: 'pt-PT', currency: 'EUR' }))
+    const testSettings: Settings = {
+      SETUP: {
+        language: 'pt-PT',
+        currency: 'EUR',
+        languages: ['pt-PT', 'en-US'],
+        gitHubPages: defaultSettings.SETUP?.gitHubPages,
+      },
+      // Use button mode so the test can click the select button by label
+      PART_LIST: { type: 'button' },
+      PART_SUMMARY: defaultSettings.PART_SUMMARY?.type === 'icon-button' || defaultSettings.PART_SUMMARY?.type === 'button'
+        ? { type: defaultSettings.PART_SUMMARY.type }
+        : { type: 'icon-button' },
+    }
+
+    store.dispatch(settingsSlice.actions.setSettings(testSettings))
     store.dispatch(i18nSlice.actions.setLocale(defaultLocale))
   })
 
@@ -44,7 +59,7 @@ describe('UI smoke: PartList + BuildSummary', () => {
       </Provider>
     )
 
-    // Select a CPU (default category is cpu)
+    // Select a CPU within the CPU accordion (CPU is open by default)
     const cpuItem = screen.getByText('Ryzen 7 7800X3D').closest('li') as HTMLElement
     const selectBtn = within(cpuItem).getByRole('button', { name: /Selecionar/i })
     await user.click(selectBtn)
@@ -56,13 +71,12 @@ describe('UI smoke: PartList + BuildSummary', () => {
     const summarySection = summaryHeading.closest('section') as HTMLElement
     expect(within(summarySection).getByText(/Ryzen 7 7800X3D/i)).toBeInTheDocument()
 
-    // Switch to motherboard category
-    const categorySelect = screen.getByLabelText(/Categoria/i)
-    await user.selectOptions(categorySelect, 'motherboard')
+    // Expand motherboard accordion
+    const moboHeader = screen.getByRole('button', { name: /motherboard/i })
+    await user.click(moboHeader)
 
     // Find an LGA1700 motherboard which should be incompatible with AM5 CPU
     const moboItem = screen.getByText('B760M Pro').closest('li') as HTMLElement
-    expect(within(moboItem).getByText(/Incompatível/)).toBeInTheDocument()
+    expect(within(moboItem).getByTitle(/Incompat/i)).toBeInTheDocument()
   })
 })
-

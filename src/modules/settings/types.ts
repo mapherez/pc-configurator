@@ -1,3 +1,12 @@
+import type { PartListSettings, PartSummarySettings } from '../../types/app-settings'
+
+export interface SetupSettings {
+  language: string
+  currency: string
+  languages?: string[]
+  gitHubPages?: string
+}
+
 export interface ComponentSettings {
   showButton?: boolean
   showPrices?: boolean
@@ -5,10 +14,10 @@ export interface ComponentSettings {
 }
 
 export interface Settings {
-  language: string
-  currency: string
-  languages?: string[]
-  gitHubPages?: string
+  SETUP: SetupSettings
+  // Part list/summary controls
+  PART_LIST?: PartListSettings
+  PART_SUMMARY?: PartSummarySettings
   // Component settings
   HEADER?: ComponentSettings
   FOOTER?: ComponentSettings
@@ -30,11 +39,10 @@ export interface StoredState {
 
 // Types for raw settings files
 export interface RawMarketSettings {
-  name: string
-  language: string
-  currency: string
-  languages?: string[]
-  gitHubPages?: string
+  name?: string
+  SETUP?: SetupSettings
+  PART_LIST?: PartListSettings
+  PART_SUMMARY?: PartSummarySettings
   // Component settings as they appear in the file
   HEADER?: ComponentSettings
   FOOTER?: ComponentSettings

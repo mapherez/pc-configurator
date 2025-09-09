@@ -13,7 +13,7 @@ export interface SettingsState {
 const savedState = loadStoredState()
 const initialState: SettingsState = {
   market: savedState?.market ?? env.market ?? 'us',
-  settings: savedState?.settings ?? defaultSettings
+  settings: (savedState?.settings ?? (defaultSettings as Settings)) as Settings,
 }
 
 export const settingsSlice = createSlice({

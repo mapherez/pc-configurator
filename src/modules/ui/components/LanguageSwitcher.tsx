@@ -10,29 +10,29 @@ export default function LanguageSwitcher() {
   const settings = useAppSelector((state: RootState) => state.settings.settings)
   
   // Don't render if no language options available
-  if (!settings.languages?.length) {
+  if (!settings.SETUP?.languages?.length) {
     return null
   }
 
-  const options = settings.languages.map((code: string) => {
+  const options = (settings.SETUP.languages as string[]).map((code: string) => {
     const override = t(`LANG_NAME_${code}`)
     const label = override !== `LANG_NAME_${code}`
       ? override
-      : new Intl.DisplayNames([settings.language], { type: 'language' }).of(code) ?? code
+      : new Intl.DisplayNames([settings.SETUP.language], { type: 'language' }).of(code) ?? code
     return { value: code, label }
   })
 
   function onChange(e: ChangeEvent<HTMLSelectElement>) {
     const lang = e.target.value
-    // Update global settings.language; I18nProvider syncs the locale strings
-    dispatch(setGlobalSettings({ ...settings, language: lang }))
+    // Update global settings.SETUP.language; I18nProvider syncs the locale strings
+    dispatch(setGlobalSettings({ ...settings, SETUP: { ...settings.SETUP, language: lang } }))
   }
 
   return (
     <select
-      value={settings.language}
+      value={settings.SETUP.language}
       onChange={onChange}
-      className="px-2 py-1 rounded-md border border-neutral-300 dark:border-neutral-700 text-sm bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+      className="h-10 px-2 rounded-md border border-neutral-300 dark:border-neutral-700 text-sm bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
       aria-label="Language"
     >
       {options.map((opt: { value: string; label: string }) => (

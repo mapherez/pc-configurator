@@ -17,10 +17,18 @@ const marketSettingsModules = import.meta.glob<RawMarketSettings>('../../../sett
 const MARKET_SETTINGS = new Map<string, Settings>()
 
 function transformRawSettings(raw: RawMarketSettings): Settings {
+  const base: Settings = defaultSettings as Settings
   return {
+    ...base,
     ...raw,
-    language: raw.language || env.language,
-    currency: raw.currency || defaultSettings.currency,
+    SETUP: {
+      ...base.SETUP,
+      ...(raw.SETUP || {}),
+      language: raw.SETUP?.language || env.language,
+      currency: raw.SETUP?.currency || base.SETUP.currency,
+      languages: raw.SETUP?.languages || base.SETUP.languages || [env.language],
+      gitHubPages: raw.SETUP?.gitHubPages || base.SETUP.gitHubPages,
+    },
   }
 }
 
@@ -35,26 +43,36 @@ export function getMarketSettings(market: string): Settings {
 
   // First create a base settings with market's language
   // Start with default settings and env values
-  const baseSettings = deepMerge(defaultSettings, {
-    language: env.language,
+  const baseSettings = deepMerge(defaultSettings as Settings, {
+    SETUP: { language: env.language },
   })
 
   // If we have market-specific settings, merge them on top
-  const settings = rawSettings
+  const settings = validateSettings(rawSettings
     ? deepMerge(baseSettings, transformRawSettings(rawSettings))
-    : baseSettings
+    : baseSettings)
 
   MARKET_SETTINGS.set(market, settings)
   return settings
 }
 
 export function validateSettings(settings: Settings): Settings {
-  // Return a new settings object with any invalid values replaced with defaults
+  // Return a new settings object with any invalid values replaced with defaults, preserving unknown keys
+  const defaults = defaultSettings as Settings
   return {
-    language: settings.language || env.language,
-    currency: settings.currency || defaultSettings.currency,
-    languages: settings.languages || [env.language],
-    gitHubPages: settings.gitHubPages || (defaultSettings as Settings).gitHubPages,
+    ...settings,
+    SETUP: {
+      language: settings.SETUP?.language || env.language,
+      currency: settings.SETUP?.currency || defaults.SETUP.currency,
+      languages: settings.SETUP?.languages || [env.language],
+      gitHubPages: settings.SETUP?.gitHubPages || defaults.SETUP.gitHubPages,
+    },
+    PART_LIST: {
+      type: settings.PART_LIST?.type || defaults.PART_LIST?.type || 'radio',
+    },
+    PART_SUMMARY: {
+      type: settings.PART_SUMMARY?.type || defaults.PART_SUMMARY?.type || 'icon-button',
+    },
   }
 }
 

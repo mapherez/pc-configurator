@@ -37,21 +37,21 @@ function AppContent() {
     const market = (marketParam || defaultMarket)
     dispatch(setMarket(market))
     const baseSettings = getMarketSettings(market)
-    const merged = { ...baseSettings, ...(localeParam ? { language: localeParam } : {}) }
+    const merged = localeParam ? { ...baseSettings, SETUP: { ...baseSettings.SETUP, language: localeParam } } : baseSettings
     dispatch(setSettings(merged))
   }, [dispatch])
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100">
+    <div className="h-screen flex flex-col bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950 text-neutral-900 dark:text-neutral-100 antialiased leading-relaxed text-[15px] sm:text-base">
       <Header />
-      <main className="mx-auto max-w-7xl px-4 py-6">
-        <div className="grid grid-cols-[1fr_360px] gap-4">
-          <div>
+      <main className="p-4 flex-1 overflow-hidden">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-stretch gap-8 h-full">
+          <section className="min-w-0 w-full lg:w-[600px] h-full">
             <PartList />
-          </div>
-          <div>
+          </section>
+          <aside className="min-w-0 w-full lg:w-[400px] h-full overflow-auto thin-scrollbar">
             <BuildSummary />
-          </div>
+          </aside>
         </div>
       </main>
     </div>
