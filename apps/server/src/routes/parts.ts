@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import type { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 
 export function partsRouter(prisma: PrismaClient) {
   const router = Router();
 
-  router.get('/parts', async (_req, res, next) => {
+  router.get('/parts', async (_req: Request, res: Response, next: NextFunction) => {
     try {
       const parts = await prisma.part.findMany({ include: { category: true } });
       res.json(parts);
@@ -20,7 +20,7 @@ export function partsRouter(prisma: PrismaClient) {
     categoryId: z.number().int().optional(),
   });
 
-  router.post('/parts', async (req, res, next) => {
+  router.post('/parts', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const data = PartInput.parse(req.body);
       const part = await prisma.part.create({ data });
@@ -36,4 +36,3 @@ export function partsRouter(prisma: PrismaClient) {
 
   return router;
 }
-
