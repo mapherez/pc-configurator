@@ -1,0 +1,29 @@
+// Prisma schema for Express API (PostgreSQL)
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  parts     Part[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Part {
+  id         Int       @id @default(autoincrement())
+  name       String
+  price      Decimal   @db.Numeric(10, 2)
+  category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId Int?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+

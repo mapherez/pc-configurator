@@ -8,4 +8,3 @@ export interface PartListSettings {
 export interface PartSummarySettings {
   type: PartSummaryInputType
 }
-

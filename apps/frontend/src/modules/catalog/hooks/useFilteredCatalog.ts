@@ -17,4 +17,3 @@ export function useFilteredCatalog(predicate: Predicate) {
 
   return filteredByCategory
 }
-

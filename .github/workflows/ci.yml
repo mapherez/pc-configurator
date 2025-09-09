@@ -14,8 +14,15 @@ jobs:
         with:
           node-version: 20.19.x
           cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run test:run
-      - run: npm run build
-
+      - name: Install dependencies (workspaces)
+        run: npm ci
+      - name: Lint frontend
+        run: npm run lint -w apps/frontend
+      - name: Test frontend
+        run: npm run test:run -w apps/frontend
+      - name: Generate Prisma client
+        run: npm run prisma:generate -w apps/server
+      - name: Build frontend
+        run: npm run build -w apps/frontend
+      - name: Build server
+        run: npm run build -w apps/server

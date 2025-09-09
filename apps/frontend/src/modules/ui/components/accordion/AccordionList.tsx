@@ -6,4 +6,3 @@ type Props = {
 export default function AccordionList({ children, className }: Props) {
   return <div className={className ? className : ''}>{children}</div>
 }
-
