@@ -12,6 +12,8 @@ import defaultLocale from '../../../../../settings/default.locale.json'
 import PartList from '../../../../modules/ui/components/PartList'
 import BuildSummary from '../../../../modules/ui/components/BuildSummary'
 import I18nProvider from '../../../../modules/i18n/I18nProvider'
+import { CatalogCtx, type CatalogState } from '../../../../modules/catalog/context'
+import type { Part } from '../../../../modules/catalog/schema'
 
 // Create a test store
 const store = configureStore({
@@ -48,13 +50,42 @@ describe('UI smoke: PartList + BuildSummary', () => {
 
   it('selects CPU and shows in summary; flags incompatible MOBO', async () => {
     const user = userEvent.setup()
+    const cpu: Part = {
+      id: 'ryzen-7-7800x3d',
+      sku: '7800X3D',
+      name: 'Ryzen 7 7800X3D',
+      brand: 'AMD',
+      category: 'cpu',
+      price: 399,
+      images: [],
+      specs: { socket: 'AM5', tdp: 120 },
+    }
+    const mobo: Part = {
+      id: 'b760m-pro',
+      sku: 'B760M-PRO',
+      name: 'B760M Pro',
+      brand: 'MSI',
+      category: 'motherboard',
+      price: 129,
+      images: [],
+      specs: { socket: 'LGA1700', ram_type: 'DDR5', form_factor: 'mATX' },
+    }
+    const catalogValue: CatalogState = {
+      catalogByCategory: { cpu: [cpu], motherboard: [mobo] },
+      allParts: [cpu, mobo],
+      loading: false,
+      error: null,
+      refresh: async () => {},
+    }
     render(
       <Provider store={store}>
         <I18nProvider>
-          <div>
-            <PartList />
-            <BuildSummary />
-          </div>
+          <CatalogCtx.Provider value={catalogValue}>
+            <div>
+              <PartList />
+              <BuildSummary />
+            </div>
+          </CatalogCtx.Provider>
         </I18nProvider>
       </Provider>
     )
