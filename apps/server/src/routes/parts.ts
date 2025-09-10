@@ -1,5 +1,5 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 export function partsRouter(prisma: PrismaClient) {
@@ -20,10 +20,31 @@ export function partsRouter(prisma: PrismaClient) {
     categoryId: z.number().int().optional(),
   });
 
+  function slugify(input: string) {
+    return input
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
+
   router.post('/parts', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const data = PartInput.parse(req.body);
-      const part = await prisma.part.create({ data });
+
+      const createData: Prisma.PartCreateInput = {
+        slug: slugify(data.name),
+        sku: '',
+        name: data.name,
+        brand: '',
+        price: data.price.toString(),
+        images: [],
+        ...(data.categoryId !== undefined
+          ? { category: { connect: { id: data.categoryId } } }
+          : {}),
+      };
+
+      const part = await prisma.part.create({ data: createData });
       res.status(201).json(part);
     } catch (e: any) {
       if (e?.name === 'ZodError') {
