@@ -1,26 +1,9 @@
 import { useMemo, useState, useCallback, useEffect } from 'react'
 import type { Part } from '../../catalog/schema'
-
-// Local catalog import (initial offline data)
-import cpu from '../../catalog/data/cpu.json'
-import gpu from '../../catalog/data/gpu.json'
-import mobo from '../../catalog/data/motherboard.json'
-import ram from '../../catalog/data/ram.json'
-import pcCase from '../../catalog/data/case.json'
-import psu from '../../catalog/data/psu.json'
+import { useCatalog } from '../../catalog/context'
 
 export type CatalogByCategory = Record<string, Part[]>
 
-export const DATA_BY_CATEGORY: CatalogByCategory = {
-  cpu: cpu as Part[],
-  gpu: gpu as Part[],
-  motherboard: mobo as Part[],
-  ram: ram as Part[],
-  case: pcCase as Part[],
-  psu: psu as Part[],
-}
-
-const ALL_PARTS: Part[] = Object.values(DATA_BY_CATEGORY).flat() as Part[]
 
 export type FiltersState = {
   brand: string
@@ -41,22 +24,27 @@ export type FiltersApi = FiltersState & {
 }
 
 export function useCatalogFilters(): FiltersApi {
+  const { catalogByCategory } = useCatalog()
   const [brand, setBrand] = useState<string>('')
   const [query, setQuery] = useState<string>('')
   const [priceMin, setPriceMin] = useState<number | null>(null)
   const [priceMax, setPriceMax] = useState<number | null>(null)
 
-  const brands = useMemo(() => Array.from(new Set(ALL_PARTS.map((p) => p.brand))).sort(), [])
+  const allParts = useMemo(() => Object.values(catalogByCategory).flat() as Part[], [catalogByCategory])
+  const brands = useMemo(
+    () => Array.from(new Set(allParts.map((p) => p.brand))).sort(),
+    [allParts]
+  )
 
   // Static slider bounds minimum is 0; maximum is dynamic based on current brand/query filtered items
   const sliderBounds = useMemo(() => ({ min: 0, max: 0 }), [])
 
   const brandQueryFiltered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return ALL_PARTS.filter((p) => (brand ? p.brand === brand : true)).filter((p) =>
+    return allParts.filter((p) => (brand ? p.brand === brand : true)).filter((p) =>
       q ? `${p.name} ${p.brand} ${p.sku}`.toLowerCase().includes(q) : true
     )
-  }, [brand, query])
+  }, [allParts, brand, query])
 
   const sliderMaxDynamic = useMemo(() => {
     let max = 0
@@ -93,6 +81,8 @@ export function useCatalogFilters(): FiltersApi {
     [brand, query, priceMin, priceMax]
   )
 
+  // No fetching here; data comes from CatalogProvider
+
   return {
     brand,
     query,
@@ -110,5 +100,8 @@ export function useCatalogFilters(): FiltersApi {
 }
 
 export function useCatalogData() {
-  return DATA_BY_CATEGORY
+  const { catalogByCategory } = useCatalog()
+  return catalogByCategory
 }
+
+// mapping moved into CatalogProvider

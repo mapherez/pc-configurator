@@ -12,6 +12,7 @@ import type { Category } from './modules/build/buildSlice'
 import { setMarket, setSettings } from './modules/settings/settingsSlice'
 import { getMarketSettings } from './modules/settings/settings'
 import UrlSyncProvider from './modules/app/UrlSyncProvider'
+import { CatalogProvider } from './modules/catalog/CatalogContext'
 
 function AppContent() {
   const dispatch = useAppDispatch()
@@ -63,7 +64,9 @@ function App() {
     <Provider store={store}>
       <I18nProvider>
         <UrlSyncProvider>
-          <AppContent />
+          <CatalogProvider>
+            <AppContent />
+          </CatalogProvider>
         </UrlSyncProvider>
       </I18nProvider>
     </Provider>

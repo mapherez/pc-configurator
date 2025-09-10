@@ -1,12 +1,13 @@
 import { useMemo } from 'react'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { removePart, reset, type Category } from '../../build/buildSlice'
-import { calcTotals, getSelectedParts, buildSpecsFromSelection, recommendPsu } from '../../build/selectors'
-import { evaluateBuild } from '../../build/compatibility'
+import { calcTotals, recommendPsu } from '../../build/selectors'
+import { evaluateBuild, extractSpecs, type SpecsBag } from '../../build/compatibility'
 import type { Part } from '../../catalog/schema'
 import { serializeSelectedToUrl } from '../../build/share'
 import { useI18n } from '../../i18n/i18n'
 import { useSettings } from '../../settings/settings'
+import { useCatalogData } from '../../catalog/hooks/useCatalogFilters'
 import { X, Copy, ExternalLink, Check, HelpCircle } from 'lucide-react'
 
 export default function BuildSummary() {
@@ -16,9 +17,31 @@ export default function BuildSummary() {
   const removePartAction = (category: Category) => dispatch(removePart({ category }))
   const resetAction = () => dispatch(reset())
 
-  const parts = useMemo<Part[]>(() => getSelectedParts(selected), [selected])
+  const catalog = useCatalogData()
+  const indexById = (list: Part[]): Record<string, Part> => {
+    const idx: Record<string, Part> = {}
+    for (const p of list) idx[p.id] = p
+    return idx
+  }
+  const indexByCategory = useMemo(
+    () => Object.fromEntries(Object.entries(catalog).map(([k, v]) => [k, indexById(v as Part[])])) as Record<string, Record<string, Part>>,
+    [catalog]
+  )
+  const parts = useMemo<Part[]>(() => {
+    const result: Part[] = []
+    for (const [cat, id] of Object.entries(selected)) {
+      const part = indexByCategory[cat]?.[id as string]
+      if (part) result.push(part)
+    }
+    return result
+  }, [selected, indexByCategory])
   const totals = useMemo(() => calcTotals(parts), [parts])
-  const specs = useMemo(() => buildSpecsFromSelection(selected), [selected])
+  const specs = useMemo(() => {
+    return parts.reduce<SpecsBag>((acc, p) => {
+      Object.assign(acc, extractSpecs(p))
+      return acc
+    }, {} as SpecsBag)
+  }, [parts])
   const compat = useMemo(() => evaluateBuild(specs), [specs])
   const psuRecommended = useMemo(() => recommendPsu(parts), [parts])
   const shareUrl = useMemo(() => serializeSelectedToUrl(selected, window.location.href), [selected])

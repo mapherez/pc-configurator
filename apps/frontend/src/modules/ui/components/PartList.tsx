@@ -8,11 +8,13 @@ import AccordionList from './accordion/AccordionList'
 import AccordionItem from './accordion/AccordionItem'
 import PartListItem from './parts/PartListItem'
 import { useCatalogFilters, useCatalogData } from '../../catalog/hooks/useCatalogFilters'
+import { useCatalog } from '../../catalog/context'
 import { useFilteredCatalog } from '../../catalog/hooks/useFilteredCatalog'
 
 export function PartList() {
   const { tn } = useI18n()
   const selected = useAppSelector((state) => state.build.selected)
+  const { loading, error } = useCatalog()
 
   // Global filters and predicate
   const filters = useCatalogFilters()
@@ -58,6 +60,8 @@ export function PartList() {
       />
 
       <div className="flex-1 min-h-0 overflow-y-auto pr-2 thin-scrollbar">
+        {loading && <div className="opacity-70 px-1">Loading parts…</div>}
+        {error && <div className="text-red-600 dark:text-red-400 px-1">{String(error)}</div>}
         <AccordionList className="flex flex-col gap-4">
           {categories.map((cat) => {
             const items = filteredByCategory[cat] ?? []
