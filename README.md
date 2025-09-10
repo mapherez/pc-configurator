@@ -1,44 +1,82 @@
-PC Configurator is a full‑stack app for exploring, filtering, and assembling custom PC builds. It features a React frontend and an Express + Prisma backend backed by PostgreSQL. This repo is a monorepo designed for smooth local development and one‑click deploys (Vercel for the frontend, Render for the backend).
+PC Configurator
 
-**Overview**
-- **Frontend**: React + TypeScript (Vite), Tailwind, React Query, Redux Toolkit.
-- **Backend**: Express + TypeScript, Prisma ORM, Zod validation.
-- **Database**: PostgreSQL (Render, Supabase, or Neon).
-- **Infra**: Vercel (frontend) + Render (API) with GitHub Actions CI.
+Build custom PC lists, filter parts, and get compatibility hints. Frontend in React + Vite, backend in Express + Prisma, PostgreSQL for storage — all in a single monorepo.
 
-**Monorepo Layout**
-- `apps/frontend`: Vite + React UI (deploys to Vercel)
-- `apps/server`: Express + Prisma API (deploys to Render)
+Live Demo
+- https://pc-configurator-frontend.vercel.app/
 
-**Quick Start**
-- **Prereqs**: Node 18+ installed.
-- **Install**: `npm ci` (run at repo root to install workspaces)
-- **Server env**: copy `apps/server/.env.example` → `apps/server/.env` and set `DATABASE_URL`.
-- **Frontend env**: copy `apps/frontend/.env.example` → `apps/frontend/.env` and set `VITE_API_URL` (e.g., `http://localhost:3001`).
-- **Run**:
-  - `npm run dev -w apps/server` (API on `http://localhost:3001`)
-  - `npm run dev -w apps/frontend` (UI on `http://localhost:5173`)
+Badges
+- ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)
+- ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+- ![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite)
+- ![Express](https://img.shields.io/badge/Express-4-000000?logo=express)
+- ![Prisma](https://img.shields.io/badge/Prisma-5-2D3748?logo=prisma)
+- ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql)
+- ![Vercel](https://img.shields.io/badge/Hosted_on-Vercel-000000?logo=vercel)
+- ![Render](https://img.shields.io/badge/API_on-Render-46E3B7?logo=render)
 
-**API**
-- `GET /health`: basic health check.
-- `GET /api/parts`: list parts with categories.
-- `POST /api/parts`: create part `{ name, price, categoryId? }`.
+Overview
+- Frontend: React + TypeScript (Vite), Tailwind, Redux Toolkit.
+- Backend: Express + TypeScript, Prisma ORM, Zod validation.
+- Database: PostgreSQL (Render).
+- Deploy: Vercel (frontend) + Render (API). GitHub Actions for CI.
 
-**Deploy**
-- **Vercel (frontend)**
+Monorepo Structure
+- `apps/frontend`: Vite + React UI
+- `apps/server`: Express + Prisma API
+- `packages/*`: shared packages (future)
+
+Getting Started
+- Requirements: Node 18+ and PostgreSQL (or a `DATABASE_URL` to a hosted DB).
+- Install: run `npm ci` at the repo root to install workspaces.
+- Environment:
+  - `apps/server`: create `.env` with `DATABASE_URL`, optionally `CORS_ORIGINS`.
+  - `apps/frontend`: create `.env` with `VITE_API_BASE` (optional in dev; see below).
+- Development:
+  - API: `npm run dev -w apps/server` → http://localhost:3001
+  - Frontend: `npm run dev -w apps/frontend` → http://localhost:5173
+  - Dev fallback: the frontend auto-targets `http://localhost:3001` when running on port 5173.
+
+Database + Prisma
+- Prisma schema: `apps/server/prisma/schema.prisma`
+- Migrations: `apps/server/prisma/migrations/`
+- Generate client: `npm run prisma:generate -w apps/server`
+- Dev migrate: `npm run prisma:migrate -w apps/server`
+- Deploy migrate: `npm run prisma:deploy -w apps/server`
+- Seed data: `npm run seed -w apps/server` (uses JSON fixtures in `apps/server/prisma/data`)
+
+API Endpoints
+- `GET /health` → health info
+- `GET /api/parts` → list parts (includes category)
+- `POST /api/parts` → create a part; body: `{ name: string, price: number, categoryId?: number }`
+
+Scripts (root)
+- `dev:frontend` → `npm run dev -w apps/frontend`
+- `dev:server` → `npm run dev -w apps/server`
+- `build:frontend` → `npm run build -w apps/frontend`
+- `build:server` → `npm run build -w apps/server`
+- `test` (frontend) → `npm run test -w apps/frontend` or `npm run test:run -w apps/frontend`
+
+Deploy
+- Frontend (Vercel):
   - Root Directory: `apps/frontend`
-  - Env: `VITE_API_URL=https://<your-api>.onrender.com` (or `https://api.yourdomain.com`)
-- **Render (server)**
-  - Root Directory: `apps/server`
-  - Build: `npm ci && npm run build && npx prisma generate`
-  - Start: `npm run start`
-  - Migrations: run `npx prisma migrate deploy` on each deploy
-  - Env: `DATABASE_URL`, `NODE_ENV=production`, `CORS_ORIGINS`
+  - Build Command: `npm run build`
+  - Output Directory: `dist`
+  - Environment Variables: set `VITE_API_BASE` to your API origin (e.g., `https://pc-configurator-api-s40v.onrender.com`).
+- Backend (Render):
+  - Web Service from this repo (monorepo root).
+  - Build Command: `npm ci && npm run prisma:generate -w apps/server && npm run build:server`
+  - Start Command: `npm run prisma:deploy -w apps/server && npm run start -w apps/server`
+  - Environment Variables: `DATABASE_URL` (required), `NODE_ENV=production`, `CORS_ORIGINS` (comma-separated frontend origins).
 
-**CI**
-- GitHub Actions runs lint, tests, and builds both workspaces on pushes and PRs. See `.github/workflows/ci.yml`.
+Notes
+- CORS: server allows `.vercel.app` by default; add custom domains in `CORS_ORIGINS`.
+- `VITE_API_BASE`: set for production/frontend builds; dev falls back to `http://localhost:3001` when Vite runs on port 5173.
+- Secrets: keep production secrets in hosting provider env vars, not committed files.
 
-**Roadmap**
-- Move frontend to Next.js for SSR/SEO when ready.
-- Shared types package (`packages/shared`) for API contracts.
-- Auth, saved builds, and a richer parts catalog.
+Roadmap
+- Category ordering and improved filters
+- Backend filtering/pagination
+- Saved builds and user sessions
+- Shared types package
+
