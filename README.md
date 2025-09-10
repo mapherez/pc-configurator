@@ -78,4 +78,5 @@ https://pc-configurator-frontend.vercel.app/
 - Backend filtering/pagination
 - Saved builds and user sessions
 - Shared types package
+- Add 3D PC model to stage
 
