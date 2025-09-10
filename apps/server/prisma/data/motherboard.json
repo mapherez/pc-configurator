@@ -1,0 +1,33 @@
+[
+  {
+    "id": "mobo-b650-atx",
+    "sku": "B650-ATX-001",
+    "name": "B650 ATX Gaming",
+    "brand": "MSI",
+    "category": "motherboard",
+    "price": 179.99,
+    "images": ["/images/mobo/b650-atx.png"],
+    "specs": { "socket": "AM5", "ram_type": "DDR5", "form_factor": "ATX" }
+  },
+  {
+    "id": "mobo-b760-matx",
+    "sku": "B760M-PRO",
+    "name": "B760M Pro",
+    "brand": "ASUS",
+    "category": "motherboard",
+    "price": 139.0,
+    "images": ["/images/mobo/b760-matx.png"],
+    "specs": { "socket": "LGA1700", "ram_type": "DDR5", "form_factor": "mATX" }
+  },
+  {
+    "id": "mobo-a620-itx",
+    "sku": "A620I-EDGE",
+    "name": "A620I Edge",
+    "brand": "Gigabyte",
+    "category": "motherboard",
+    "price": 119.0,
+    "images": ["/images/mobo/a620-itx.png"],
+    "specs": { "socket": "AM5", "ram_type": "DDR5", "form_factor": "ITX" }
+  }
+]
+

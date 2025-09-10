@@ -1,0 +1,23 @@
+[
+  {
+    "id": "gpu-rtx4070s",
+    "sku": "RTX4070S-12G",
+    "name": "GeForce RTX 4070 SUPER 12GB",
+    "brand": "NVIDIA",
+    "category": "gpu",
+    "price": 629.0,
+    "images": ["/images/gpu/rtx4070s.png"],
+    "specs": { "length_mm": 300, "tdp": 220 }
+  },
+  {
+    "id": "gpu-rx7800xt",
+    "sku": "RX7800XT-16G",
+    "name": "Radeon RX 7800 XT 16GB",
+    "brand": "AMD",
+    "category": "gpu",
+    "price": 519.0,
+    "images": ["/images/gpu/rx7800xt.png"],
+    "specs": { "length_mm": 320, "tdp": 263 }
+  }
+]
+

@@ -19,8 +19,13 @@ model Category {
 
 model Part {
   id         Int       @id @default(autoincrement())
+  slug       String    @unique
+  sku        String
   name       String
+  brand      String
   price      Decimal   @db.Decimal(10, 2)
+  images     String[]
+  specs      Json?
   category   Category? @relation(fields: [categoryId], references: [id])
   categoryId Int?
   createdAt  DateTime  @default(now())
