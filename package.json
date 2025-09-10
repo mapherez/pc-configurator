@@ -15,7 +15,7 @@
     "test": "npm run test -w apps/frontend",
     "lint": "npm run lint -w apps/frontend && npm run lint -w apps/server",
     "typecheck": "npm run typecheck -w apps/server && npm run typecheck -w apps/frontend",
-    "prepare": "husky install"
+    "prepare": "node -e \"process.exit(process.env.CI||process.env.VERCEL?0:1)\" || husky install"
   },
   "devDependencies": {
     "husky": "^9.1.6",
