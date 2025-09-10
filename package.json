@@ -12,7 +12,18 @@
     "dev:server": "npm run dev -w apps/server",
     "build:frontend": "npm run build -w apps/frontend",
     "build:server": "npm run build -w apps/server",
-    "test": "npm run test -w apps/frontend"
+    "test": "npm run test -w apps/frontend",
+    "lint": "npm run lint -w apps/frontend && npm run lint -w apps/server",
+    "typecheck": "npm run typecheck -w apps/server && npm run typecheck -w apps/frontend",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs}": [
+      "eslint --max-warnings=0"
+    ]
   }
 }
-

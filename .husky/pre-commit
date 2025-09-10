@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+
+set -e
+
+echo "[pre-commit] Linting staged files (no auto-fix)..."
+npx --no-install lint-staged
+
+echo "[pre-commit] Running impacted tests..."
+node scripts/run-impacted-tests.mjs
+
+echo "[pre-commit] All checks passed."
