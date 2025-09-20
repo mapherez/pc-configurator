@@ -1,8 +1,7 @@
-import { PrismaClient, type Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../src/db.js';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-
-const prisma = new PrismaClient();
 
 type Item = {
   id: string;
@@ -12,7 +11,7 @@ type Item = {
   category: string;
   price: number;
   images?: string[];
-  specs?: Prisma.InputJsonValue;
+  specs?: Prisma.JsonValue | null;
 };
 
 async function load(file: string): Promise<Item[]> {
@@ -38,6 +37,8 @@ async function seed() {
   }
 
   for (const item of all) {
+    const specs = item.specs ?? Prisma.JsonNull;
+
     await prisma.part.upsert({
       where: { slug: item.id },
       update: {
@@ -46,7 +47,7 @@ async function seed() {
         brand: item.brand ?? '',
         price: item.price.toString(),
         images: item.images ?? [],
-        specs: (item.specs as Prisma.InputJsonValue) ?? null,
+        specs,
         categoryId: catMap.get(item.category) ?? null,
       },
       create: {
@@ -56,7 +57,7 @@ async function seed() {
         brand: item.brand ?? '',
         price: item.price.toString(),
         images: item.images ?? [],
-        specs: (item.specs as Prisma.InputJsonValue) ?? null,
+        specs,
         categoryId: catMap.get(item.category) ?? null,
       },
     });

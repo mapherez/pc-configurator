@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import { env } from './env.js';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './db.js';
 import { partsRouter } from './routes/parts.js';
 
 const app = express();
@@ -21,8 +21,6 @@ const corsOptions: cors.CorsOptions = {
   credentials: true,
 };
 app.use(cors(corsOptions));
-
-const prisma = new PrismaClient();
 
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ ok: true, env: env.NODE_ENV, time: new Date().toISOString() });

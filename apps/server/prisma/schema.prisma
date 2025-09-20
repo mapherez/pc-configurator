@@ -1,7 +1,5 @@
-// Prisma schema for Express API (PostgreSQL)
-
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -23,11 +21,15 @@ model Part {
   sku        String
   name       String
   brand      String
-  price      Decimal   @db.Decimal(10, 2)
-  images     String[]
+  price      Decimal
+  images     Json?
   specs      Json?
   category   Category? @relation(fields: [categoryId], references: [id])
   categoryId Int?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 }
+
+
+
+
