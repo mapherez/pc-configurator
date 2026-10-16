@@ -19,12 +19,15 @@
   },
   "devDependencies": {
     "husky": "^9.1.6",
-    "lint-staged": "^15.2.10"
+    "lint-staged": "^17.6.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,cjs}": [
       "eslint --max-warnings=0"
     ]
   },
-  "packageManager": "yarn@1.22.19+sha1.4ba7fc5c6e704fce2066ecbfb0b0d8976fe62447"
+  "packageManager": "yarn@1.22.19+sha1.4ba7fc5c6e704fce2066ecbfb0b0d8976fe62447",
+  "dependencies": {
+    "vitest": "5.0.5"
+  }
 }

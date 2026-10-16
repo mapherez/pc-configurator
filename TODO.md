@@ -1,9 +1,11 @@
-PC Configurator – TODOs
+# PC Configurator – TODOs
 
 Purpose
+
 - A living backlog of improvements for product, code quality, DX, and ops.
 
 Product & UX
+
 - Category order: Display categories in a fixed, sensible order (cpu, gpu, motherboard, ram, psu, case, ...).
 - Sorting: Add sort controls (price asc/desc, TDP, brand, name).
 - Loading states: Skeletons/spinners for initial fetch and per-category lists.
@@ -13,6 +15,7 @@ Product & UX
 - Mobile polish: Check small screens; ensure sticky filters and summary behavior.
 
 Frontend
+
 - Catalog context
   - Memoize and expose brand list, price bounds from provider to avoid recompute in hooks.
   - Add a light cache invalidation (timestamp) and a manual “Refresh” button in UI.
@@ -27,6 +30,7 @@ Frontend
   - Image handling: lazy-load images and support thumbnails (once API provides).
 
 Backend (API)
+
 - Endpoints
   - GET /api/parts: support query params (category, brand, q, priceMin, priceMax, sort, page, pageSize).
   - GET /api/brands: list distinct brands (optionally by category).
@@ -40,6 +44,7 @@ Backend (API)
   - Logging (request logs with minimal PII), structured errors.
 
 Database & Seeding
+
 - Seed quality
   - Validate seeds with zod before upsert; report invalid entries.
   - Normalize brand names (case, spacing) in seed for consistent filtering.
@@ -48,6 +53,7 @@ Database & Seeding
   - Add createdBy/updatedBy in future (if auth appears).
 
 Testing & Quality
+
 - Frontend tests
   - Add tests for CatalogProvider (loading/error/grouping) and filtering hooks.
   - Snapshot tests for PartList states (loading/empty/error populated).
@@ -58,6 +64,7 @@ Testing & Quality
   - Playwright/Cypress to validate selection flow and compatibility rules.
 
 Dev Experience
+
 - ESLint/Prettier
   - Unify ESLint patterns across workspaces; consider type-aware linting on server (perf budgeted).
   - Add Prettier config and script (optional if desired).
@@ -68,6 +75,7 @@ Dev Experience
   - Add root `ci` script to run lint, typecheck, and tests consistently in CI.
 
 CI/CD & Ops
+
 - GitHub Actions
   - Add status badges to README (build, test) and Vercel/Render deployment.
   - Add a job to curl API /health post-build to verify server starts.
@@ -79,18 +87,20 @@ CI/CD & Ops
   - Add environment variable docs (DATABASE_URL, CORS_ORIGINS, NODE_ENV).
 
 Documentation
+
 - Add CONTRIBUTING.md with local setup, scripts, and hooks behavior.
 - Add .env.example for apps/server and apps/frontend.
 - Expand README with screenshots/GIF and Deploy Status section.
 
 Nice-to-haves (Future)
+
 - Saved builds (anonymous + optional auth) and shareable short links.
 - Admin data import UI; bulk upload CSV/JSON; thumbnail generation.
 - Internationalization: refine locales and currency switching.
 
 Priorities (suggested next steps)
+
 1) API filtering/sorting/pagination and frontend integration.
 2) Server test scaffold (Vitest + Supertest) and a couple of route tests.
 3) UI polish: category order, loading/error states, retry button.
 4) README badges + .env.example files.
-
