@@ -1,85 +1,87 @@
-import { useMemo, useState, useCallback, useEffect } from 'react'
-import type { Part } from '../../catalog/schema'
-import { useCatalog } from '../../catalog/context'
+import { useMemo, useState, useCallback, useEffect } from "react";
+import type { Part } from "../../catalog/schema";
+import { useCatalog } from "../../catalog/context";
 
-export type CatalogByCategory = Record<string, Part[]>
-
+export type CatalogByCategory = Record<string, Part[]>;
 
 export type FiltersState = {
-  brand: string
-  query: string
-  priceMin: number | null
-  priceMax: number | null
-}
+  brand: string;
+  query: string;
+  priceMin: number | null;
+  priceMax: number | null;
+};
 
 export type FiltersApi = FiltersState & {
-  setBrand: (v: string) => void
-  setQuery: (v: string) => void
-  setPriceMin: (v: number | null) => void
-  setPriceMax: (v: number | null) => void
-  brands: string[]
-  sliderBounds: { min: number; max: number }
-  sliderMaxDynamic: number
-  predicate: (p: Part) => boolean
-}
+  setBrand: (v: string) => void;
+  setQuery: (v: string) => void;
+  setPriceMin: (v: number | null) => void;
+  setPriceMax: (v: number | null) => void;
+  brands: string[];
+  sliderBounds: { min: number; max: number };
+  sliderMaxDynamic: number;
+  predicate: (p: Part) => boolean;
+};
 
 export function useCatalogFilters(): FiltersApi {
-  const { catalogByCategory } = useCatalog()
-  const [brand, setBrand] = useState<string>('')
-  const [query, setQuery] = useState<string>('')
-  const [priceMin, setPriceMin] = useState<number | null>(null)
-  const [priceMax, setPriceMax] = useState<number | null>(null)
+  const { catalogByCategory } = useCatalog();
+  const [brand, setBrand] = useState<string>("");
+  const [query, setQuery] = useState<string>("");
+  const [priceMin, setPriceMin] = useState<number | null>(null);
+  const [priceMax, setPriceMax] = useState<number | null>(null);
 
-  const allParts = useMemo(() => Object.values(catalogByCategory).flat() as Part[], [catalogByCategory])
+  const allParts = useMemo(
+    () => Object.values(catalogByCategory).flat() as Part[],
+    [catalogByCategory],
+  );
   const brands = useMemo(
     () => Array.from(new Set(allParts.map((p) => p.brand))).sort(),
-    [allParts]
-  )
+    [allParts],
+  );
 
   // Static slider bounds minimum is 0; maximum is dynamic based on current brand/query filtered items
-  const sliderBounds = useMemo(() => ({ min: 0, max: 0 }), [])
+  const sliderBounds = useMemo(() => ({ min: 0, max: 0 }), []);
 
   const brandQueryFiltered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return allParts.filter((p) => (brand ? p.brand === brand : true)).filter((p) =>
-      q ? `${p.name} ${p.brand} ${p.sku}`.toLowerCase().includes(q) : true
-    )
-  }, [allParts, brand, query])
+    const q = query.trim().toLowerCase();
+    return allParts
+      .filter((p) => (brand ? p.brand === brand : true))
+      .filter((p) => (q ? `${p.name} ${p.brand} ${p.sku}`.toLowerCase().includes(q) : true));
+  }, [allParts, brand, query]);
 
   const sliderMaxDynamic = useMemo(() => {
-    let max = 0
-    for (const it of brandQueryFiltered) if (it.price > max) max = it.price
-    return max
-  }, [brandQueryFiltered])
+    let max = 0;
+    for (const it of brandQueryFiltered) if (it.price > max) max = it.price;
+    return max;
+  }, [brandQueryFiltered]);
 
   // Ensure current priceMax does not exceed dynamic bound; also ensure priceMin <= priceMax
   useEffect(() => {
-    setPriceMax((prev) => (prev != null ? Math.min(prev, sliderMaxDynamic) : prev))
-  }, [sliderMaxDynamic])
+    setPriceMax((prev) => (prev != null ? Math.min(prev, sliderMaxDynamic) : prev));
+  }, [sliderMaxDynamic]);
 
   useEffect(() => {
     setPriceMin((prev) => {
-      const max = priceMax ?? Infinity
-      if (prev != null && prev > max) return max
-      return prev
-    })
-  }, [priceMax])
+      const max = priceMax ?? Infinity;
+      if (prev != null && prev > max) return max;
+      return prev;
+    });
+  }, [priceMax]);
 
   const predicate = useCallback(
     (p: Part) => {
-      const q = query.trim().toLowerCase()
-      const min = priceMin != null ? priceMin : -Infinity
-      const max = priceMax != null ? priceMax : Infinity
-      if (brand && p.brand !== brand) return false
-      if (p.price < min || p.price > max) return false
+      const q = query.trim().toLowerCase();
+      const min = priceMin != null ? priceMin : -Infinity;
+      const max = priceMax != null ? priceMax : Infinity;
+      if (brand && p.brand !== brand) return false;
+      if (p.price < min || p.price > max) return false;
       if (q) {
-        const hay = `${p.name} ${p.brand} ${p.sku}`.toLowerCase()
-        if (!hay.includes(q)) return false
+        const hay = `${p.name} ${p.brand} ${p.sku}`.toLowerCase();
+        if (!hay.includes(q)) return false;
       }
-      return true
+      return true;
     },
-    [brand, query, priceMin, priceMax]
-  )
+    [brand, query, priceMin, priceMax],
+  );
 
   // No fetching here; data comes from CatalogProvider
 
@@ -96,12 +98,12 @@ export function useCatalogFilters(): FiltersApi {
     sliderBounds,
     sliderMaxDynamic,
     predicate,
-  }
+  };
 }
 
 export function useCatalogData() {
-  const { catalogByCategory } = useCatalog()
-  return catalogByCategory
+  const { catalogByCategory } = useCatalog();
+  return catalogByCategory;
 }
 
 // mapping moved into CatalogProvider

@@ -29,3 +29,10 @@ dist-ssr
 *.sw?
 apps/server/prisma/dev.db
 
+.vitest/
+
+# Shared Vite+ editor configuration.
+!.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json

@@ -1,12 +1,14 @@
 Server (Express + Prisma + SQLite/Turso)
 
 Database workflow
-- `npm run db:0:generate` – regenerate Prisma Client (safe to run anytime)
-- `npm run db:1:migrate:local` – create/apply migrations against `prisma/dev.db`
-- `npm run db:2:apply:turso` – push the latest migration to Turso (pass a folder name with `--` to override)
-- `npm run db:3:seed:turso` – seed the remote Turso database using `prisma/seed.ts`
+
+- `npm run db:0:generate` â€“ regenerate Prisma Client (safe to run anytime)
+- `npm run db:1:migrate:local` â€“ create/apply migrations against `prisma/dev.db`
+- `npm run db:2:apply:turso` â€“ push the latest migration to Turso (pass a folder name with `--` to override)
+- `npm run db:3:seed:turso` â€“ seed the remote Turso database using `prisma/seed.ts`
 
 Local development
+
 - Install deps: cd apps/server && npm i
 - Copy .env.example to .env (defaults to file:./dev.db)
 - Run through the database workflow (steps 0-2) as needed
@@ -14,6 +16,7 @@ Local development
 - Start dev server: npm run dev (http://localhost:3001)
 
 Turso / production
+
 - Set TURSO_DATABASE_URL (+ TURSO_AUTH_TOKEN for writes)
 - Optionally keep DATABASE_URL=file:./dev.db for local tooling
 - Build: npm run build
@@ -22,6 +25,7 @@ Turso / production
 - Start: npm run start
 
 Environment variables
+
 - DATABASE_URL: SQLite connection string (defaults to file:./dev.db)
 - TURSO_DATABASE_URL: Turso libSQL endpoint (libsql://...)
 - TURSO_AUTH_TOKEN: Turso auth token (required for writes)
@@ -29,6 +33,7 @@ Environment variables
 - CORS_ORIGINS: comma-separated allowlist (http://localhost:5173, https://*.vercel.app)
 
 Render deployment (web service)
+
 - Root Directory: apps/server
 - Build Command: npm ci && npm run build && npx prisma generate
 - Start Command: npm run start
@@ -36,6 +41,7 @@ Render deployment (web service)
 - Env vars: TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, NODE_ENV=production, CORS_ORIGINS
 
 API routes
+
 - GET /health - basic health check
 - GET /api/parts - list parts with categories
 - POST /api/parts - create part { name, price, categoryId? }

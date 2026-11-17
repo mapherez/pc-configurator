@@ -1,9 +1,9 @@
-import 'dotenv/config';
-import express, { type Request, type Response, type NextFunction } from 'express';
-import cors from 'cors';
-import { env } from './env.js';
-import { prisma } from './db.js';
-import { partsRouter } from './routes/parts.js';
+import "dotenv/config";
+import express, { type Request, type Response, type NextFunction } from "express";
+import cors from "cors";
+import { env } from "./env.js";
+import { prisma } from "./db.js";
+import { partsRouter } from "./routes/parts.js";
 
 const app = express();
 app.use(express.json());
@@ -22,15 +22,15 @@ const corsOptions: cors.CorsOptions = {
 };
 app.use(cors(corsOptions));
 
-app.get('/health', (_req: Request, res: Response) => {
+app.get("/health", (_req: Request, res: Response) => {
   res.json({ ok: true, env: env.NODE_ENV, time: new Date().toISOString() });
 });
 
-app.use('/api', partsRouter(prisma));
+app.use("/api", partsRouter(prisma));
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
-  res.status(500).json({ error: 'Internal Server Error' });
+  res.status(500).json({ error: "Internal Server Error" });
 });
 
 const port = env.PORT ?? 3001;

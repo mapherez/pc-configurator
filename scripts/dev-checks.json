@@ -1,0 +1,24 @@
+{
+  "policy": "scripts/ci-policy.mjs",
+  "go": false,
+  "vite": ["."],
+  "check": [
+    {
+      "command": "npm",
+      "args": ["run", "lint"],
+      "cwd": "."
+    },
+    {
+      "command": "npm",
+      "args": ["run", "typecheck"],
+      "cwd": "."
+    },
+    {
+      "command": "npm",
+      "args": ["run", "check:code"],
+      "cwd": "."
+    }
+  ],
+  "husky": false,
+  "impactedTests": true
+}

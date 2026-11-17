@@ -1,33 +1,45 @@
 {
   "name": "pc-configurator",
-  "private": true,
   "version": "0.1.0",
-  "type": "module",
+  "private": true,
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
+  "type": "module",
   "scripts": {
     "dev:frontend": "npm run dev -w apps/frontend",
     "dev:server": "npm run dev -w apps/server",
     "build:frontend": "npm run build -w apps/frontend",
     "build:server": "npm run build -w apps/server",
-    "test": "npm run test -w apps/frontend",
+    "test": "npm run test:run -w apps/frontend",
     "lint": "npm run lint -w apps/frontend && npm run lint -w apps/server",
     "typecheck": "npm run typecheck -w apps/server && npm run typecheck -w apps/frontend",
-    "prepare": "node -e \"process.exit(process.env.CI||process.env.VERCEL?0:1)\" || husky install"
+    "prepare": "node --input-type=module -e \"import { existsSync } from 'node:fs'; if (existsSync('scripts/install-hooks.mjs')) await import('./scripts/install-hooks.mjs');\"",
+    "release": "node scripts/release.mjs",
+    "test:ci-policy": "node --test scripts/ci-policy.test.mjs",
+    "hooks:install": "node scripts/install-hooks.mjs",
+    "precommit": "node scripts/git-hooks.mjs commit",
+    "prepush": "node scripts/format-files.mjs --check --revision HEAD && npm run check",
+    "test:release": "node --test scripts/release.test.mjs scripts/ci-policy.test.mjs",
+    "check": "node scripts/git-hooks.mjs check",
+    "check:code": "vp check",
+    "format:check": "node scripts/format-files.mjs --check",
+    "format": "node scripts/format-files.mjs",
+    "test:format": "node --test scripts/format-files.test.mjs"
   },
   "devDependencies": {
-    "husky": "^9.1.6",
-    "lint-staged": "^17.6.0"
+    "@prettier/plugin-xml": "3.4.2",
+    "prettier": "3.10.1",
+    "prettier-plugin-sh": "0.20.2",
+    "prisma": "^6.19.0",
+    "sql-formatter": "15.9.0",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.6.0",
+    "vite-plus": "1.6.0",
+    "vitest": "^5.1.0"
   },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx,mjs,cjs}": [
-      "eslint --max-warnings=0"
-    ]
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.6.0"
   },
-  "packageManager": "yarn@1.22.19+sha1.4ba7fc5c6e704fce2066ecbfb0b0d8976fe62447",
-  "dependencies": {
-    "vitest": "5.0.5"
-  }
+  "packageManager": "npm@11.20.0"
 }

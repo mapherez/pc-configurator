@@ -1,0 +1,15 @@
+{
+  "workflow": "ci.yml",
+  "marker": "pc-configurator-Release:",
+  "branch": "main",
+  "files": [
+    {
+      "path": "package.json",
+      "fields": [["version"]]
+    },
+    {
+      "path": "package-lock.json",
+      "fields": [["version"], ["packages", "", "version"]]
+    }
+  ]
+}

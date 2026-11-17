@@ -5,8 +5,8 @@
  * @returns The string with placeholders replaced by corresponding values
  */
 export function interpolate(str: string, params?: Record<string, string>): string {
-  if (!params) return str
+  if (!params) return str;
   return Object.entries(params).reduce((acc, [key, value]) => {
-    return acc.replace(new RegExp(`{{${key}}}`, 'g'), value)
-  }, str)
+    return acc.replace(new RegExp(`{{${key}}}`, "g"), value);
+  }, str);
 }

@@ -1,31 +1,32 @@
-import type { ChangeEvent } from 'react'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
-import type { RootState } from '../../../store/index'
-import { setSettings as setGlobalSettings } from '../../settings/settingsSlice'
-import { useI18n } from '../../i18n/i18n'
+import type { ChangeEvent } from "react";
+import { useAppDispatch, useAppSelector } from "../../../store/hooks";
+import type { RootState } from "../../../store/index";
+import { setSettings as setGlobalSettings } from "../../settings/settingsSlice";
+import { useI18n } from "../../i18n/i18n";
 
 export default function LanguageSwitcher() {
-  const { t } = useI18n()
-  const dispatch = useAppDispatch()
-  const settings = useAppSelector((state: RootState) => state.settings.settings)
-  
+  const { t } = useI18n();
+  const dispatch = useAppDispatch();
+  const settings = useAppSelector((state: RootState) => state.settings.settings);
+
   // Don't render if no language options available
   if (!settings.SETUP?.languages?.length) {
-    return null
+    return null;
   }
 
   const options = (settings.SETUP.languages as string[]).map((code: string) => {
-    const override = t(`LANG_NAME_${code}`)
-    const label = override !== `LANG_NAME_${code}`
-      ? override
-      : new Intl.DisplayNames([settings.SETUP.language], { type: 'language' }).of(code) ?? code
-    return { value: code, label }
-  })
+    const override = t(`LANG_NAME_${code}`);
+    const label =
+      override !== `LANG_NAME_${code}`
+        ? override
+        : (new Intl.DisplayNames([settings.SETUP.language], { type: "language" }).of(code) ?? code);
+    return { value: code, label };
+  });
 
   function onChange(e: ChangeEvent<HTMLSelectElement>) {
-    const lang = e.target.value
+    const lang = e.target.value;
     // Update global settings.SETUP.language; I18nProvider syncs the locale strings
-    dispatch(setGlobalSettings({ ...settings, SETUP: { ...settings.SETUP, language: lang } }))
+    dispatch(setGlobalSettings({ ...settings, SETUP: { ...settings.SETUP, language: lang } }));
   }
 
   return (
@@ -41,5 +42,5 @@ export default function LanguageSwitcher() {
         </option>
       ))}
     </select>
-  )
+  );
 }

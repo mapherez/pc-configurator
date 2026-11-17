@@ -2,9 +2,6 @@
   "SETUP": {
     "language": "en-US",
     "currency": "USD",
-    "languages": [
-      "en-US",
-      "pt-PT"
-    ]
+    "languages": ["en-US", "pt-PT"]
   }
 }

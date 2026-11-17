@@ -1,51 +1,51 @@
-import type { PartListSettings, PartSummarySettings } from '../../types/app-settings'
+import type { PartListSettings, PartSummarySettings } from "../../types/app-settings";
 
 export interface SetupSettings {
-  language: string
-  currency: string
-  languages?: string[]
-  gitHubPages?: string
+  language: string;
+  currency: string;
+  languages?: string[];
+  gitHubPages?: string;
 }
 
 export interface ComponentSettings {
-  showButton?: boolean
-  showPrices?: boolean
+  showButton?: boolean;
+  showPrices?: boolean;
   // Add other component-specific settings
 }
 
 export interface Settings {
-  SETUP: SetupSettings
+  SETUP: SetupSettings;
   // Part list/summary controls
-  PART_LIST?: PartListSettings
-  PART_SUMMARY?: PartSummarySettings
+  PART_LIST?: PartListSettings;
+  PART_SUMMARY?: PartSummarySettings;
   // Component settings
-  HEADER?: ComponentSettings
-  FOOTER?: ComponentSettings
+  HEADER?: ComponentSettings;
+  FOOTER?: ComponentSettings;
   // Add other component sections as needed
 }
 
-export type LocaleDict = Record<string, string>
+export type LocaleDict = Record<string, string>;
 
 export interface MarketSettings {
-  name: string
-  settings: Settings
-  locale: LocaleDict
+  name: string;
+  settings: Settings;
+  locale: LocaleDict;
 }
 
 export interface StoredState {
-  market: string
-  settings: Settings
+  market: string;
+  settings: Settings;
 }
 
 // Types for raw settings files
 export interface RawMarketSettings {
-  name?: string
-  SETUP?: SetupSettings
-  PART_LIST?: PartListSettings
-  PART_SUMMARY?: PartSummarySettings
+  name?: string;
+  SETUP?: SetupSettings;
+  PART_LIST?: PartListSettings;
+  PART_SUMMARY?: PartSummarySettings;
   // Component settings as they appear in the file
-  HEADER?: ComponentSettings
-  FOOTER?: ComponentSettings
+  HEADER?: ComponentSettings;
+  FOOTER?: ComponentSettings;
   // Add other sections as needed
 }
 

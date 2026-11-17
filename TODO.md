@@ -100,7 +100,7 @@ Nice-to-haves (Future)
 
 Priorities (suggested next steps)
 
-1) API filtering/sorting/pagination and frontend integration.
-2) Server test scaffold (Vitest + Supertest) and a couple of route tests.
-3) UI polish: category order, loading/error states, retry button.
-4) README badges + .env.example files.
+1. API filtering/sorting/pagination and frontend integration.
+2. Server test scaffold (Vitest + Supertest) and a couple of route tests.
+3. UI polish: category order, loading/error states, retry button.
+4. README badges + .env.example files.

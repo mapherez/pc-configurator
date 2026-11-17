@@ -1,7 +1,7 @@
-import { Prisma } from '@prisma/client';
-import { prisma } from '../src/db.js';
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
+import { Prisma } from "@prisma/client";
+import { prisma } from "../src/db.js";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 type Item = {
   id: string;
@@ -15,8 +15,8 @@ type Item = {
 };
 
 async function load(file: string): Promise<Item[]> {
-  const p = path.join(process.cwd(), 'prisma', 'data', file);
-  const raw = await readFile(p, 'utf8');
+  const p = path.join(process.cwd(), "prisma", "data", file);
+  const raw = await readFile(p, "utf8");
   return JSON.parse(raw) as Item[];
 }
 
@@ -25,7 +25,7 @@ async function upsertCategory(name: string) {
 }
 
 async function seed() {
-  const files = ['cpu.json', 'gpu.json', 'motherboard.json', 'ram.json', 'psu.json', 'case.json'];
+  const files = ["cpu.json", "gpu.json", "motherboard.json", "ram.json", "psu.json", "case.json"];
   const all: Item[] = (await Promise.all(files.map(load))).flat();
 
   // Ensure categories exist
@@ -42,9 +42,9 @@ async function seed() {
     await prisma.part.upsert({
       where: { slug: item.id },
       update: {
-        sku: item.sku ?? '',
+        sku: item.sku ?? "",
         name: item.name,
-        brand: item.brand ?? '',
+        brand: item.brand ?? "",
         price: item.price.toString(),
         images: item.images ?? [],
         specs,
@@ -52,9 +52,9 @@ async function seed() {
       },
       create: {
         slug: item.id,
-        sku: item.sku ?? '',
+        sku: item.sku ?? "",
         name: item.name,
-        brand: item.brand ?? '',
+        brand: item.brand ?? "",
         price: item.price.toString(),
         images: item.images ?? [],
         specs,

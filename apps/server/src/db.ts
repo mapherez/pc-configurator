@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
-import { PrismaLibSQL } from '@prisma/adapter-libsql';
-import { env } from './env.js';
+import { PrismaClient } from "@prisma/client";
+import { PrismaLibSQL } from "@prisma/adapter-libsql";
+import { env } from "./env.js";
 
 type GlobalStore = typeof globalThis & {
   prisma?: PrismaClient;
@@ -30,6 +30,6 @@ function buildPrismaClient() {
 
 export const prisma = globalForPrisma.prisma ?? buildPrismaClient();
 
-if (env.NODE_ENV !== 'production') {
+if (env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
