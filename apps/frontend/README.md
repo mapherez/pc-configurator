@@ -15,6 +15,5 @@ pelo mesmo processo e origem. Não há URL de API separado ou catálogo embutido
 Os comandos locais compilam esse workspace automaticamente. Para alterar o módulo
 partilhado enquanto o frontend corre, executa `npm run build:domain` novamente.
 
-A montagem é esquemática 2D; modelos 3D ficam para a última entrega. Gestão e MCP
-são posteriores. Ver [SPECIFICATION.md](../../SPECIFICATION.md) e
+A montagem é esquemática 2D; modelos 3D ficam para a última entrega. A gestão em `/admin` usa NoX Login e inclui preview privado e acessos MCP. Ver [SPECIFICATION.md](../../SPECIFICATION.md) e
 [SETTINGS.md](../../SETTINGS.md).

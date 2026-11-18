@@ -1,10 +1,21 @@
 import express, { type ErrorRequestHandler } from "express";
 import { existsSync } from "node:fs";
-import { resolve, extname } from "node:path";
+import { resolve, extname, dirname } from "node:path";
 import { BuildSchema, evaluateBuild } from "@pc-configurator/domain";
+import { z } from "zod";
+import { NoXLogin } from "./nox-login.js";
+import { prepareManagement, AccessError } from "./management/storage.js";
+import { AdminAuth } from "./management/auth.js";
+import { ManagementService } from "./management/service.js";
+import { managementRoutes } from "./management/routes.js";
 import type { CatalogStore } from "./db.js";
 
-export function createApp(store: CatalogStore, webDir?: string) {
+export function createApp(
+  store: CatalogStore,
+  webDir?: string,
+  management: { login?: NoXLogin; ownerEmail?: string; dataDirectory?: string } = {},
+) {
+  prepareManagement(store);
   const app = express();
   app.disable("x-powered-by");
   app.use((_req, res, next) => {
@@ -12,6 +23,12 @@ export function createApp(store: CatalogStore, webDir?: string) {
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     next();
   });
+  const admin = managementRoutes(
+    new AdminAuth(store, management.login, management.ownerEmail ?? ""),
+    new ManagementService(store, management.dataDirectory ?? dirname(store.database.name)),
+  );
+  app.locals.closeManagement = admin.close;
+  app.use(admin.router);
   app.get("/health", (_req, res) => {
     res.setHeader("Cache-Control", "no-store");
     try {
@@ -63,6 +80,14 @@ export function createApp(store: CatalogStore, webDir?: string) {
   }
   app.use((_req, res) => res.status(404).json({ error: "not_found" }));
   const onError: ErrorRequestHandler = (error, _req, res, _next) => {
+    if (error instanceof AccessError) {
+      res.status(error.status).json({ error: error.code });
+      return;
+    }
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: "invalid_input" });
+      return;
+    }
     if (error instanceof SyntaxError && "body" in error) {
       res.status(400).json({ error: "invalid_json" });
       return;

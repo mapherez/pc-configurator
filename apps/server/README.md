@@ -21,7 +21,7 @@ sem substituir os seus dados.
 - `GET /api/configurator`: settings efetivas e componentes publicados, com ofertas por mercado.
 - `POST /api/quote`: cálculo sem escrita de orçamento e compatibilidade de uma build validada.
 - `GET /api/parts`: contrato de leitura anterior, limitado a ofertas EUR de Portugal.
-- Escrita pública: 405; a gestão autenticada será implementada separadamente.
+- Escrita anónima: bloqueada; a gestão autenticada e o MCP usam permissões locais.
 - Preços: unidades inteiras na BD; a API atual apresenta o valor líquido decimal
   como string. O novo contrato inclui ofertas próprias por mercado, variantes e
   referências visuais; apenas componentes publicados são públicos.
@@ -41,4 +41,5 @@ Ver os procedimentos de alojamento e restauro no [README principal](../../README
 Contratos, preços e regras estão em `@pc-configurator/domain`, compilado
 automaticamente pelos comandos do servidor. `createPart` e `publishSettings` são
 operações internas validadas e transacionais. Não há endpoints públicos para as
-executar. Autenticação/permissões de gestão e MCP pertencem à próxima entrega.
+executar. A gestão e o MCP chamam `ManagementService`, com autenticação NoX, CSRF para
+browser, permissões, revisões e auditoria. Ver [MANAGEMENT.md](../../MANAGEMENT.md).

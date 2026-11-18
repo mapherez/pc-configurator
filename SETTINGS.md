@@ -2,7 +2,7 @@
 
 `packages/domain` é o módulo partilhado entre API e frontend. Os contratos Zod,
 cálculos monetários e regras são executados por ambos. Não dependem de React,
-Express ou SQLite. O SDK de gestão/MCP poderá usar as mesmas operações.
+Express ou SQLite. A gestão e o SDK MCP usam as mesmas operações.
 
 ## Organização
 
@@ -29,9 +29,8 @@ explícito. Por exemplo, `taxBasisPoints: null` significa imposto por configurar
 nunca zero. `0` é uma taxa efetivamente configurada de zero.
 
 Os overrides são validados antes de publicar, transacionalmente. Reiniciar
-preserva-os. Por agora existem apenas métodos internos; a próxima entrega fornece
-a interface autenticada de edição, pré-visualização e publicação. Não há escrita
-pública por HTTP.
+preserva-os. A gestão em `/admin` e o MCP usam as mesmas operações autenticadas de edição,
+pré-visualização e publicação. Não há escrita anónima por HTTP. Ver [MANAGEMENT.md](MANAGEMENT.md).
 
 ## Dinheiro e mercados
 
@@ -73,5 +72,5 @@ dados/interfaces/conectores podem exigir regras adicionais antes de compra real.
 - `GET /api/parts`: contrato de leitura anterior, em EUR para Portugal.
 
 `@pc-configurator/domain` exporta os mesmos schemas e `evaluateBuild` para todos
-os canais. Autorização, auditoria e publicação pela gestão/MCP serão acrescentadas
-sobre estas operações; não será dado acesso direto à BD a uma AI.
+os canais. Autorização, auditoria e publicação pela gestão/MCP são aplicadas sobre estas
+operações; a AI não recebe acesso direto à BD.

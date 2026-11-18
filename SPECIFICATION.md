@@ -97,8 +97,12 @@ As seis posições principais têm dados iniciais; armazenamento, cooler e vento
 estão preparados mas ainda sem catálogo publicado. Há múltiplas posições e
 quantidades, restauro/partilha e indicação de componentes em falta.
 
-A ilustração continua esquemática 2D. Não há ainda gestão privada, autenticação,
-MCP ou modelos 3D. Os dados atuais são demonstrativos.
+A ilustração continua esquemática 2D e os dados iniciais são demonstrativos.
+A gestão privada usa NoX Login, papéis locais, rascunhos, pré-visualização,
+publicação/arquivo e auditoria. O MCP direto usa o SDK NoX e as mesmas operações,
+com acessos limitados por permissões, sessão e prazo. A instalação deve configurar
+o NoX Auth existente; testes locais usam um provider fictício. Modelos 3D continuam
+para a entrega final.
 
 ## Critérios finais de aceitação
 

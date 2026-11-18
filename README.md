@@ -55,7 +55,8 @@ curl --fail http://127.0.0.1:8080/health
 `/health` responde 200 apenas quando a estrutura da BD está utilizável; responde
 503 quando a BD falha. A API pública fornece o catálogo e settings em `GET /api/configurator` e calcula
 orçamentos em `POST /api/quote` (operação de leitura). `GET /api/parts` mantém o
-contrato de leitura anterior. A criação anónima está fechada. A gestão autenticada e MCP são uma entrega futura.
+contrato de leitura anterior. A criação anónima está fechada. A gestão autenticada está em `/admin`; configuração do NoX Login e MCP em
+[MANAGEMENT.md](MANAGEMENT.md).
 
 ## Backup e restauro
 
@@ -69,6 +70,8 @@ docker compose cp app:/data/catalog-backup.db ./catalog-backup.db
 Escolhe um nome novo em cada backup. O comando recusa sobrescrever ficheiros e
 usa o mecanismo online do SQLite, incluindo alterações ainda presentes no WAL.
 Mantém uma cópia fora do host. Não copies apenas `catalog.db` enquanto a app corre.
+O backup remove sessões e acessos MCP da cópia, preservando conteúdo, papéis e
+auditoria. Para imagens e configuração NoX, segue também [MANAGEMENT.md](MANAGEMENT.md).
 
 Para restaurar, mantém o contentor existente mas para o processo, substitui a BD
 e elimina os ficheiros auxiliares antigos antes de voltar a arrancar:
@@ -116,8 +119,8 @@ quantidades por posição e códigos de compatibilidade traduzidos pelo locale a
 Dados insuficientes aparecem como verificação pendente.
 
 Os JSON e a ordem de aplicação estão documentados em [SETTINGS.md](SETTINGS.md).
-A gestão privada e MCP, incluindo edição/publicação destes dados, são a próxima
-entrega. Os 14 componentes atuais continuam a ser exemplos, sem garantia de
+A gestão privada e MCP permitem guardar, pré-visualizar, publicar e arquivar estes
+dados, com papéis e auditoria. É necessário configurar o NoX Login no host. Os 14 componentes atuais continuam a ser exemplos, sem garantia de
 preços ou disponibilidade comerciais atuais.
 
 ## Validação e release
@@ -140,3 +143,17 @@ CI valida código, testes, formatação e contentor. `npm run release` reutiliza
 aprovação do commit de origem e publica um arquivo com código e builds completos,
 sem repetir os testes de origem. Não instala nem atualiza automaticamente o host.
 Ver [DEVELOPMENT.md](DEVELOPMENT.md).
+
+## Gestão privada
+
+`/admin` permite gerir componentes, preços, imagens, settings, traduções e acessos
+MCP. O Compose base mantém a gestão fechada; o override `compose.auth.yaml`
+configura a integração com o NoX Auth existente. Não há uma conta/password local.
+Procedimento e permissões em [MANAGEMENT.md](MANAGEMENT.md).
+
+## Créditos NoX
+
+Baseado em [nox-mcp](https://github.com/mapherez/nox-mcp) por
+[mapherez](https://github.com/mapherez), usado sob CC BY-NC-SA 4.0.
+A autenticação integra o serviço separado [nox-auth](https://github.com/mapherez/nox-auth),
+por mapherez, através do seu perfil NoX Login.

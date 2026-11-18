@@ -1,11 +1,12 @@
 import Database from "better-sqlite3";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, chmodSync } from "node:fs";
 import { dirname } from "node:path";
 import {
   ComponentSchema,
   SettingsPatchSchema,
   mergeSettings,
   resolveSettings,
+  LocaleOverridesSchema,
   type ComponentInput,
   type SettingsPatch,
   type Snapshot,
@@ -44,8 +45,9 @@ export class CatalogStore {
   readonly #db: Database.Database;
 
   constructor(filename: string) {
-    mkdirSync(dirname(filename), { recursive: true });
+    mkdirSync(dirname(filename), { recursive: true, mode: 0o700 });
     this.#db = new Database(filename);
+    chmodSync(filename, 0o600);
     try {
       this.#db.pragma("foreign_keys = ON");
       this.#db.pragma("busy_timeout = 5000");
@@ -175,7 +177,20 @@ export class CatalogStore {
         })),
       });
     });
-    return { settings, components };
+    const hasLocales = this.#db
+      .prepare("SELECT name FROM sqlite_master WHERE name = 'published_locales'")
+      .get();
+    const locales = hasLocales
+      ? Object.fromEntries(
+          (
+            this.#db.prepare("SELECT language,value FROM published_locales").all() as {
+              language: string;
+              value: string;
+            }[]
+          ).map((row) => [row.language, JSON.parse(row.value)]),
+        )
+      : {};
+    return { settings, components, locales: LocaleOverridesSchema.parse(locales) };
   }
 
   listParts(): CatalogPart[] {
@@ -262,6 +277,99 @@ export class CatalogStore {
         )
         .run(JSON.stringify(combined));
     })();
+  }
+
+  /** Internal transaction boundary shared by management, audit and sessions. */
+  get database(): Database.Database {
+    return this.#db;
+  }
+
+  replacePart(input: ComponentInput): void {
+    const part = ComponentSchema.parse(input);
+    this.#db.transaction(() => {
+      const row = this.#db.prepare("SELECT id FROM catalog_parts WHERE slug = ?").get(part.id) as
+        | { id: number }
+        | undefined;
+      if (!row) {
+        this.createPart(part);
+        return;
+      }
+      this.#db
+        .prepare("INSERT INTO catalog_categories(name) VALUES (?) ON CONFLICT(name) DO NOTHING")
+        .run(part.category);
+      this.#db
+        .prepare(`UPDATE catalog_parts SET sku = @sku, name = @name, brand = @brand,
+        category_id = (SELECT id FROM catalog_categories WHERE name = @category), images = @images, specs = @specs WHERE id = @partId`)
+        .run({
+          partId: row.id,
+          sku: part.sku,
+          name: part.name,
+          brand: part.brand,
+          category: part.category,
+          images: JSON.stringify(part.images),
+          specs: JSON.stringify(part.specs),
+        });
+      this.#db
+        .prepare(
+          "UPDATE component_details SET status = ?, product_id = ?, variant = ?, visual = ? WHERE part_id = ?",
+        )
+        .run(
+          part.status,
+          part.productId ?? null,
+          JSON.stringify(part.variant),
+          part.visual ? JSON.stringify(part.visual) : null,
+          row.id,
+        );
+      this.#db.prepare("DELETE FROM market_offers WHERE part_id = ?").run(row.id);
+      const insert = this.#db.prepare(
+        "INSERT INTO market_offers(part_id, market, currency, net_minor, available) VALUES (?, ?, ?, ?, ?)",
+      );
+      for (const offer of part.offers)
+        insert.run(row.id, offer.market, offer.currency, offer.netMinor, Number(offer.available));
+    })();
+  }
+
+  allComponents() {
+    const rows = this.#db
+      .prepare(`${selectParts} JOIN component_details d ON d.part_id = p.id ORDER BY p.id`)
+      .all() as PartRow[];
+    // Snapshot parser is shared; temporarily selecting by status is unnecessary for management reads.
+    return rows.map((row) => this.componentById(row.slug)!);
+  }
+
+  componentById(id: string) {
+    const row = this.#db.prepare(`${selectParts} WHERE p.slug = ?`).get(id) as PartRow | undefined;
+    if (!row) return null;
+    const details = this.#db
+      .prepare("SELECT * FROM component_details WHERE part_id = ?")
+      .get(row.id) as {
+      status: string;
+      product_id: string | null;
+      variant: string;
+      visual: string | null;
+    };
+    const offers = this.#db
+      .prepare("SELECT market, currency, net_minor, available FROM market_offers WHERE part_id = ?")
+      .all(row.id) as { market: string; currency: string; net_minor: number; available: number }[];
+    return ComponentSchema.parse({
+      id: row.slug,
+      sku: row.sku,
+      name: row.name,
+      brand: row.brand,
+      category: row.category_name,
+      status: details.status,
+      images: JSON.parse(row.images),
+      specs: JSON.parse(row.specs),
+      variant: JSON.parse(details.variant),
+      ...(details.product_id ? { productId: details.product_id } : {}),
+      ...(details.visual ? { visual: JSON.parse(details.visual) } : {}),
+      offers: offers.map((offer) => ({
+        market: offer.market,
+        currency: offer.currency,
+        netMinor: offer.net_minor,
+        available: Boolean(offer.available),
+      })),
+    });
   }
 
   close(): void {

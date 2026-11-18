@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -118,6 +119,25 @@ try {
   base = await start();
   assert.equal(await count(base), 15, "data survives replacement of the container");
   stop();
+  docker(
+    "run",
+    "--rm",
+    "--network",
+    "none",
+    "--read-only",
+    "--tmpfs",
+    "/tmp",
+    "--cap-drop",
+    "ALL",
+    "--security-opt",
+    "no-new-privileges:true",
+    "--mount",
+    `type=bind,source=${fileURLToPath(new URL("../apps/server/dist/test", import.meta.url))},target=/app/apps/server/dist/test,readonly`,
+    "--entrypoint",
+    "node",
+    image,
+    "dist/test/runtime-smoke.js",
+  );
   console.log("Container checks passed: assets, API, backup, restart, replacement and shutdown.");
 } finally {
   if (containerCreated) docker("rm", "--force", name);

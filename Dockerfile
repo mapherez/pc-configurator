@@ -23,6 +23,7 @@ FROM node:26-bookworm-slim AS runtime
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=8080 \
   PC_CONFIGURATOR_DATA_DIR=/data PC_CONFIGURATOR_WEB_DIR=/app/apps/frontend/dist
 WORKDIR /app/apps/server
+COPY --from=build /app/package.json /app/package.json
 COPY --from=dependencies /app/node_modules /app/node_modules
 COPY --from=dependencies /app/apps/server/node_modules ./node_modules
 COPY --from=build /app/packages/domain /app/packages/domain

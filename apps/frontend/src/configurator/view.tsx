@@ -58,7 +58,10 @@ const icons: Record<Category, LucideIcon> = {
   fan: Fan,
 };
 
-function readInitialState(settings?: Settings): { value: State; storageAvailable: boolean } {
+function readInitialState(
+  settings?: Settings,
+  persist = true,
+): { value: State; storageAvailable: boolean } {
   const fromUrl = stateFromUrl(window.location.href, settings);
   let value = fromUrl ?? restoreState(null, settings);
   try {
@@ -69,7 +72,7 @@ function readInitialState(settings?: Settings): { value: State; storageAvailable
         ),
         settings,
       );
-    localStorage.setItem(storageKey, JSON.stringify(value));
+    if (persist) localStorage.setItem(storageKey, JSON.stringify(value));
     return { value, storageAvailable: true };
   } catch {
     return { value, storageAvailable: false };
@@ -280,7 +283,13 @@ export function Configurator() {
   );
 }
 
-export function ConfiguratorWorkspace({ snapshot }: { snapshot: Snapshot }) {
+export function ConfiguratorWorkspace({
+  snapshot,
+  preview = false,
+}: {
+  snapshot: Snapshot;
+  preview?: boolean;
+}) {
   const {
     catalog,
     settings,
@@ -294,9 +303,24 @@ export function ConfiguratorWorkspace({ snapshot }: { snapshot: Snapshot }) {
   const categories = allCategories.filter((key) =>
     settings.global.slots.some((entry) => entry.category === key),
   );
-  const [initial] = useState(() => readInitialState(settings));
+  const previewComponent =
+    preview && new URL(location.href).searchParams.get("kind") === "component"
+      ? catalog.find((part) => part.id === new URL(location.href).searchParams.get("id"))
+      : undefined;
+  const [initial] = useState(() => {
+    const loaded = readInitialState(settings, !preview);
+    if (previewComponent) {
+      const slot = settings.global.slots.find(
+        (entry) => entry.category === previewComponent.category,
+      );
+      if (slot) loaded.value.selected[slot.id] = previewComponent.id;
+    }
+    return loaded;
+  });
   const [state, setState] = useState(initial.value);
-  const [category, setCategory] = useState<Category>(settings.global.slots[0].category);
+  const [category, setCategory] = useState<Category>(
+    previewComponent?.category ?? settings.global.slots[0].category,
+  );
   const [area, setArea] = useState<"catalog" | "assembly" | "summary">("catalog");
   const [query, setQuery] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -304,14 +328,17 @@ export function ConfiguratorWorkspace({ snapshot }: { snapshot: Snapshot }) {
   const [past, setPast] = useState<{ selected: Selection; quantities: Record<string, number> }[]>(
     [],
   );
-  const [slot, setSlot] = useState(settings.global.slots[0].id);
+  const [slot, setSlot] = useState(
+    settings.global.slots.find((entry) => entry.category === previewComponent?.category)?.id ??
+      settings.global.slots[0].id,
+  );
   const [zoom, setZoom] = useState(1);
   const [modal, setModal] = useState<"share" | "compatibility" | null>(null);
   const [notice, setNotice] = useState<TextKey | null>(null);
   const [storageAvailable, setStorageAvailable] = useState(initial.storageAvailable);
   const dialog = useRef<HTMLDialogElement>(null);
   const t = (key: TextKey, params?: Record<string, string | number>) =>
-    translate(state.language, key, params);
+    translate(state.language, key, params, snapshot.locales);
   const selected = useMemo(() => selectedParts(state.selected), [state.selected, selectedParts]);
   const evaluation = useMemo(() => evaluate(state), [state, evaluate]);
   const checks = evaluation.compatibility;
@@ -369,9 +396,9 @@ export function ConfiguratorWorkspace({ snapshot }: { snapshot: Snapshot }) {
 
   useEffect(() => {
     document.documentElement.lang = state.language;
-    document.title = translate(state.language, "app");
-    window.history.replaceState(null, "", shareUrl(state, window.location.href));
-  }, [state]);
+    document.title = translate(state.language, "app", {}, snapshot.locales);
+    if (!preview) window.history.replaceState(null, "", shareUrl(state, window.location.href));
+  }, [state, preview, snapshot.locales]);
 
   useEffect(() => {
     const element = dialog.current;
@@ -382,7 +409,7 @@ export function ConfiguratorWorkspace({ snapshot }: { snapshot: Snapshot }) {
 
   const updateState = (nextState: State) => {
     try {
-      localStorage.setItem(storageKey, JSON.stringify(nextState));
+      if (!preview) localStorage.setItem(storageKey, JSON.stringify(nextState));
       setStorageAvailable(true);
     } catch {
       setStorageAvailable(false);
@@ -449,14 +476,18 @@ export function ConfiguratorWorkspace({ snapshot }: { snapshot: Snapshot }) {
         {t("skipToContent")}
       </a>
       <header className="workspace-header">
-        <a className="wordmark" href="/">
+        <a
+          className="wordmark"
+          href={preview ? "/admin" : "/"}
+          target={preview ? "_top" : undefined}
+        >
           <span className="brand-symbol" aria-hidden="true">
             <PcCase size={23} />
           </span>
           <strong>{t("app")}</strong>
           <span className="wordmark-dot" aria-hidden="true" />
         </a>
-        <span className="workspace-label">{t("workspace")}</span>
+        <span className="workspace-label">{t(preview ? "adminPreview" : "workspace")}</span>
         <div className="preferences">
           <label className="preference">
             <Globe2 size={15} aria-hidden="true" />
@@ -665,6 +696,11 @@ export function ConfiguratorWorkspace({ snapshot }: { snapshot: Snapshot }) {
               const isSelected = state.selected[slot] === part.id;
               const conflict = candidateConflicts(part, state.selected, slot, state.quantities);
               const partPrice = price(part, state.market, state.quantities[slot] ?? 1);
+              const image = part.images.find(
+                (value) =>
+                  value.startsWith("/media/") ||
+                  (preview && value.startsWith("/api/admin/assets/")),
+              );
               const current = catalog.find((item) => item.id === state.selected[slot]);
               const currentGross =
                 current && price(current, state.market, state.quantities[slot] ?? 1)?.gross;
@@ -677,7 +713,17 @@ export function ConfiguratorWorkspace({ snapshot }: { snapshot: Snapshot }) {
                   aria-label={part.name}
                 >
                   <div className="part-card-top">
-                    <PartGlyph category={category} />
+                    {image ? (
+                      <img
+                        className="part-image"
+                        src={image}
+                        alt={part.name}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <PartGlyph category={category} />
+                    )}
                     <div>
                       <span className="part-brand">{part.brand}</span>
                       <h4>{part.name}</h4>
@@ -885,6 +931,7 @@ export function ConfiguratorWorkspace({ snapshot }: { snapshot: Snapshot }) {
               className="icon-button"
               disabled={!Object.keys(state.selected).length}
               aria-label={t("share")}
+              hidden={preview}
               onClick={() => {
                 setModal("share");
                 setNotice(null);
@@ -1033,6 +1080,7 @@ export function ConfiguratorWorkspace({ snapshot }: { snapshot: Snapshot }) {
             </div>
             <button
               className="primary-button share-button"
+              hidden={preview}
               disabled={!Object.keys(state.selected).length}
               onClick={() => {
                 setModal("share");
@@ -1059,7 +1107,7 @@ export function ConfiguratorWorkspace({ snapshot }: { snapshot: Snapshot }) {
       <footer className="workspace-footer">
         <span className={storageAvailable ? "save-status" : "save-status is-error"}>
           <span />
-          {t(storageAvailable ? "saved" : "storageUnavailable")}
+          {t(preview ? "adminPreview" : storageAvailable ? "saved" : "storageUnavailable")}
         </span>
         <span className="live-notice" role="status">
           {notice && t(notice)}
@@ -1086,6 +1134,7 @@ export function ConfiguratorWorkspace({ snapshot }: { snapshot: Snapshot }) {
             <input
               className="share-url"
               aria-label={t("share")}
+              hidden={preview}
               readOnly
               value={link}
               onFocus={(event) => event.currentTarget.select()}

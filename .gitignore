@@ -41,3 +41,6 @@ apps/server/data/
 *.db
 *.db-shm
 *.db-wal
+
+# Confidential NoX client registration (also in custom data directories).
+**/nox-login.json

@@ -172,3 +172,13 @@ it("prices quantities as a single rounded line and preserves them in sharing and
   expect(quantity).toHaveValue("1");
   expect(new URL(window.location.href).searchParams.has("qty.fan")).toBe(false);
 });
+
+it("shows an attached managed image even when an old seed image path is still present", () => {
+  const data = structuredClone(snapshot);
+  data.components[0].images = ["/images/missing.png", "/media/asset-test"];
+  render(<ConfiguratorWorkspace snapshot={data} />);
+  expect(screen.getByRole("img", { name: data.components[0].name })).toHaveAttribute(
+    "src",
+    "/media/asset-test",
+  );
+});

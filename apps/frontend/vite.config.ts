@@ -6,7 +6,11 @@ import { fileURLToPath } from "node:url";
 export default defineConfig({
   plugins: lazyPlugins(() => [react()]),
   base: "/",
-  server: { proxy: { "/api": "http://127.0.0.1:3001" } },
+  server: {
+    proxy: Object.fromEntries(
+      ["/api", "/auth", "/mcp", "/media"].map((path) => [path, "http://127.0.0.1:3001"]),
+    ),
+  },
   build: {
     rolldownOptions: {
       input: {

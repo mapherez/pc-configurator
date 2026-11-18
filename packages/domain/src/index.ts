@@ -95,13 +95,12 @@ const GlobalSchema = z
     slots: z.array(SlotSchema).min(1).max(64),
   })
   .strict();
+const TextKeySchema = z.enum(
+  Object.keys(portuguese) as [keyof typeof portuguese, ...(keyof typeof portuguese)[]],
+);
 export const MarketSchema = z
   .object({
-    nameKey: z.custom<keyof typeof portuguese>(
-      (key) =>
-        typeof key === "string" && Object.hasOwn(portuguese, key) && Object.hasOwn(english, key),
-      "unknown_locale_key",
-    ),
+    nameKey: TextKeySchema,
     features: FeaturesSchema.partial().optional(),
     currency: z.string().regex(/^[A-Z]{3}$/),
     minorDigits: z.number().int().min(0).max(3),
@@ -158,10 +157,11 @@ export function translate(
   language: Language,
   key: TextKey,
   params: Record<string, string | number> = {},
+  overrides?: LocaleOverrides,
 ) {
   return Object.entries(params).reduce(
     (text, [name, value]) => text.replaceAll(`{{${name}}}`, String(value)),
-    dictionaries[language][key],
+    overrides?.[language]?.[key] ?? dictionaries[language][key],
   );
 }
 export const BuildLineSchema = z
@@ -399,8 +399,44 @@ export function evaluateBuild(input: Build, components: Component[], settings: S
       .every((slot) => resolved.some((line) => line.slot === slot.id)),
   };
 }
+const LocaleKeySchema = TextKeySchema;
+export const LocaleValuesSchema = z
+  .partialRecord(LocaleKeySchema, z.string().min(1).max(4000))
+  .superRefine((values, ctx) => {
+    for (const [key, value] of Object.entries(values)) {
+      const placeholders = (text: string) =>
+        [...text.matchAll(/{{(.*?)}}/g)]
+          .map((match) => match[1])
+          .sort((a, b) => a.localeCompare(b));
+      if (
+        JSON.stringify(placeholders(value!)) !==
+        JSON.stringify(placeholders(portuguese[key as TextKey]))
+      )
+        ctx.addIssue({ code: "custom", path: [key], message: "invalid_placeholders" });
+    }
+  });
+export const LocaleOverridesSchema = z.partialRecord(LanguageSchema, LocaleValuesSchema);
+export type LocaleOverrides = z.infer<typeof LocaleOverridesSchema>;
+export function parseMoney(input: string, digits: number): number | null {
+  if (
+    !Number.isInteger(digits) ||
+    digits < 0 ||
+    digits > 3 ||
+    !new RegExp(`^\\d+(?:[.,]\\d{1,${Math.max(1, digits)}})?$`).test(input.trim())
+  )
+    return null;
+  const [whole, fraction = ""] = input.trim().replace(",", ".").split(".");
+  if (fraction.length > digits) return null;
+  const amount =
+    BigInt(whole) * 10n ** BigInt(digits) + BigInt(fraction.padEnd(digits, "0") || "0");
+  return amount <= 100000000n ? Number(amount) : null;
+}
 export const SnapshotSchema = z
-  .object({ settings: SettingsSchema, components: z.array(ComponentSchema) })
+  .object({
+    settings: SettingsSchema,
+    components: z.array(ComponentSchema),
+    locales: LocaleOverridesSchema.optional(),
+  })
   .strict()
   .superRefine((snapshot, ctx) => {
     if (
@@ -410,3 +446,43 @@ export const SnapshotSchema = z
       ctx.addIssue({ code: "custom", message: "invalid_public_catalogue" });
   });
 export type Snapshot = z.output<typeof SnapshotSchema>;
+
+export const RoleSchema = z.enum(["unassigned", "viewer", "editor", "publisher", "owner"]);
+export const PublicActorSchema = z.object({
+  issuer: z.string(),
+  subject: z.string(),
+  email: z.string(),
+  name: z.string(),
+  role: RoleSchema,
+  scopes: z.array(z.string()),
+});
+export const AdminSessionSchema = z.object({
+  configured: z.boolean(),
+  actor: PublicActorSchema.nullable(),
+  csrf: z.string().optional(),
+});
+export type AdminSession = z.infer<typeof AdminSessionSchema>;
+export const AdminDocumentSchema = z.object({
+  kind: z.enum(["component", "settings", "locale"]),
+  id: z.string(),
+  revision: z.number().int(),
+  draft: z.unknown(),
+  published_revision: z.number().int(),
+});
+export type AdminDocument = z.infer<typeof AdminDocumentSchema>;
+export const AssetSchema = z.object({
+  id: Identifier,
+  filename: z.string(),
+  content_type: z.string(),
+  bytes: z.number().int(),
+  checksum: z.string(),
+  created: z.string(),
+});
+export type Asset = z.infer<typeof AssetSchema>;
+export const AdminStateSchema = z.object({
+  snapshot: SnapshotSchema,
+  components: z.array(ComponentSchema),
+  documents: z.array(AdminDocumentSchema),
+  assets: z.array(AssetSchema),
+});
+export type AdminState = z.infer<typeof AdminStateSchema>;

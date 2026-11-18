@@ -26,6 +26,8 @@ docker build -t pc-configurator:local .
 npm run test:container
 ```
 
+A suite de gestão valida login NoX sobre um socket Unix fictício, JWT, CSRF,
+papéis, publicação, MCP 2025/2026, importação atómica e backups sem credenciais.
 O teste cria apenas um contentor e volume próprios, valida a distribuição Linux,
 assets e persistência e remove os seus recursos no final. Nunca aponta para o
 volume usado pela app normal.
@@ -66,3 +68,11 @@ Os testes da origem não são repetidos. Alterações de código/dependências e
 novo CI. A publicação não altera o host; para atualizar, usa o código/arquivo da
 release e reconstrói o serviço mantendo o volume. As releases continuam em fila
 sem cancelamento. O procedimento do host está no [README](README.md).
+
+## Gestão e instalação NoX
+
+A implementação de gestão está em `apps/server/src/management` e a UI em
+`apps/frontend/src/admin`. O provider de teste e a fixture de preview ficam em
+`apps/server/test`; não entram na imagem de runtime e não são importados pela app.
+O `compose.auth.yaml` é um override separado, sem registo ou deploy automático
+pelo CI/release. Ver [MANAGEMENT.md](MANAGEMENT.md) antes de o ativar no host.

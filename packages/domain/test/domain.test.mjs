@@ -205,3 +205,19 @@ void test("market feature overrides and monetary precision remain independent fr
     evaluateBuild(enBuild, [part], settings).total,
   );
 });
+
+void test("management prices parse exact decimals and locale publication preserves placeholders", async () => {
+  const { parseMoney, LocaleValuesSchema, translate } = await import("../dist/index.js");
+  assert.equal(parseMoney("399,99", 2), 39999);
+  assert.equal(parseMoney("1.005", 3), 1005);
+  assert.equal(parseMoney("12", 0), 12);
+  for (const value of ["-1", "1e3", "1.999", "NaN", "", "1.2.3"])
+    assert.equal(parseMoney(value, 2), null);
+  assert.equal(parseMoney("12.0", 0), null);
+  assert.throws(() => LocaleValuesSchema.parse({ progress: "Missing parameters" }));
+  assert.throws(() => LocaleValuesSchema.parse({ madeUpKey: "Text" }));
+  assert.equal(
+    translate("en-US", "title", {}, { "en-US": { title: "Published title" } }),
+    "Published title",
+  );
+});

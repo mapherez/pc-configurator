@@ -13,6 +13,22 @@ let source: Database.Database | undefined;
 try {
   source = new Database(env.databaseFile, { readonly: true, fileMustExist: true });
   await source.backup(output);
+  // Restoring content must never restore revoked browser sessions or AI access.
+  const backup = new Database(output);
+  try {
+    if (backup.prepare("SELECT name FROM sqlite_master WHERE name = 'auth_sessions'").get()) {
+      backup.pragma("foreign_keys = ON");
+      backup.pragma("secure_delete = ON");
+      backup.transaction(() => {
+        backup.exec(
+          "DELETE FROM auth_delegations; DELETE FROM auth_transactions; DELETE FROM auth_sessions;",
+        );
+      })();
+      backup.exec("VACUUM");
+    }
+  } finally {
+    backup.close();
+  }
   console.log(`Backup saved to ${output}`);
 } catch (error) {
   rmSync(output, { force: true });

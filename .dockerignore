@@ -11,3 +11,5 @@
 .vitest
 .codex
 .DS_Store
+
+**/nox-login.json

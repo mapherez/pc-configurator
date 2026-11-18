@@ -15,21 +15,27 @@
     "pretypecheck": "npm run build --workspace=@pc-configurator/domain",
     "prelint": "npm run build --workspace=@pc-configurator/domain",
     "pretest:run": "npm run build --workspace=@pc-configurator/domain",
-    "predev": "npm run build --workspace=@pc-configurator/domain"
+    "predev": "npm run build --workspace=@pc-configurator/domain",
+    "auth:setup": "node dist/src/auth-setup.js"
   },
   "dependencies": {
+    "@modelcontextprotocol/node": "^2.0.0",
+    "@nox/mcp": "https://github.com/mapherez/nox-mcp/releases/download/v0.7.4/nox-mcp.tgz",
+    "@pc-configurator/domain": "*",
     "better-sqlite3": "13.2.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "@pc-configurator/domain": "*"
+    "image-size": "2.1.0",
+    "jose": "6.2.18",
+    "zod": "^4.6.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "9.6.0",
     "@types/express": "^4.17.21",
     "@types/node": "^20.19.17",
     "globals": "^16.3.0",
     "typescript": "^5.5.4",
-    "vite-plus": "1.6.0",
-    "@types/better-sqlite3": "9.6.0"
+    "vite-plus": "1.6.0"
   },
   "engines": {
     "node": ">=26.13.1 <27"
