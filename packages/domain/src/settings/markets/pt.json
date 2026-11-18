@@ -1,0 +1,6 @@
+{
+  "nameKey": "market_pt",
+  "currency": "EUR",
+  "minorDigits": 2,
+  "taxBasisPoints": 2300
+}

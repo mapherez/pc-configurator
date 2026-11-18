@@ -4,9 +4,10 @@ Configurador de computadores com catálogo de componentes, seleção de peças e
 verificações de compatibilidade. React/TypeScript e Vite+ no frontend;
 Express/TypeScript e SQLite local no servidor. O mesmo serviço serve site e API.
 
-O redesenho público está em `/prototype.html`: catálogo à esquerda, montagem
-esquemática ao centro e resumo à direita. Ainda usa dados de exemplo e não precisa
-de modelos 3D. O desenvolvimento completo está definido em [SPECIFICATION.md](SPECIFICATION.md).
+A interface principal tem catálogo à esquerda, montagem esquemática ao centro e
+resumo à direita. Lê o catálogo publicado da API e calcula preços e compatibilidade
+com o mesmo módulo do servidor. `/prototype.html` mantém os links já partilhados.
+Modelos 3D continuam para uma entrega posterior. Ver [SPECIFICATION.md](SPECIFICATION.md).
 
 ## Desenvolvimento local
 
@@ -20,10 +21,10 @@ npm run dev:server
 Noutro terminal:
 
 ```sh
-npm run dev:prototype
+npm run dev:frontend
 ```
 
-Para a interface anterior, `npm run dev:frontend`. O Vite encaminha `/api` para
+O alias `npm run dev:prototype` abre a mesma app. O Vite encaminha `/api` para
 `127.0.0.1:3001`, independentemente da porta escolhida para o frontend. Não é
 necessário configurar um URL de API ou credenciais de BD. O primeiro arranque do
 servidor cria `apps/server/data/catalog.db` e os 14 componentes de exemplo.
@@ -52,8 +53,9 @@ curl --fail http://127.0.0.1:8080/health
 ```
 
 `/health` responde 200 apenas quando a estrutura da BD está utilizável; responde
-503 quando a BD falha. A API pública permite leitura em `GET /api/parts`. A
-criação anónima está fechada. A gestão autenticada e MCP são uma entrega futura.
+503 quando a BD falha. A API pública fornece o catálogo e settings em `GET /api/configurator` e calcula
+orçamentos em `POST /api/quote` (operação de leitura). `GET /api/parts` mantém o
+contrato de leitura anterior. A criação anónima está fechada. A gestão autenticada e MCP são uma entrega futura.
 
 ## Backup e restauro
 
@@ -96,6 +98,27 @@ O site e API ficam em `http://127.0.0.1:3001`. As opções estão em
 [apps/server/.env.example](apps/server/.env.example). Os caminhos relativos são
 resolvidos a partir de `apps/server` quando os comandos usam npm workspaces.
 Para backup: `npm run db:backup -- /caminho/absoluto/catalog-backup.db`.
+
+## Configuração e catálogo
+
+Os contratos, cálculo de preços, compatibilidade e locales estão em
+`packages/domain`. O frontend não inclui uma cópia fixa do catálogo: obtém a
+configuração publicada e componentes do SQLite. Se a API falhar, mostra retry e
+preserva a seleção guardada. Peças removidas/arquivadas são sinalizadas em links
+antigos, sem desaparecerem silenciosamente.
+
+Preços são líquidos em unidades monetárias inteiras; cartões, filtros e resumo
+incluem imposto definido no mercado. Portugal mantém a configuração demonstrativa
+inicial de 23%. US tem moeda própria mas ainda não tem preços/imposto configurados:
+a app não converte nem reutiliza preços de Portugal. Idioma e mercado são escolhas
+independentes. Há posições múltiplas para memória, armazenamento e ventoinhas,
+quantidades por posição e códigos de compatibilidade traduzidos pelo locale ativo.
+Dados insuficientes aparecem como verificação pendente.
+
+Os JSON e a ordem de aplicação estão documentados em [SETTINGS.md](SETTINGS.md).
+A gestão privada e MCP, incluindo edição/publicação destes dados, são a próxima
+entrega. Os 14 componentes atuais continuam a ser exemplos, sem garantia de
+preços ou disponibilidade comerciais atuais.
 
 ## Validação e release
 

@@ -5,9 +5,21 @@
     "name": "B650 ATX Gaming",
     "brand": "MSI",
     "category": "motherboard",
-    "price": 179.99,
     "images": ["/images/mobo/b650-atx.png"],
-    "specs": { "socket": "AM5", "ram_type": "DDR5", "form_factor": "ATX" }
+    "specs": {
+      "socket": "AM5",
+      "ram_type": "DDR5",
+      "form_factor": "ATX"
+    },
+    "status": "published",
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 17999,
+        "available": true
+      }
+    ]
   },
   {
     "id": "mobo-b760-matx",
@@ -15,9 +27,21 @@
     "name": "B760M Pro",
     "brand": "ASUS",
     "category": "motherboard",
-    "price": 139.0,
     "images": ["/images/mobo/b760-matx.png"],
-    "specs": { "socket": "LGA1700", "ram_type": "DDR5", "form_factor": "mATX" }
+    "specs": {
+      "socket": "LGA1700",
+      "ram_type": "DDR5",
+      "form_factor": "mATX"
+    },
+    "status": "published",
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 13900,
+        "available": true
+      }
+    ]
   },
   {
     "id": "mobo-a620-itx",
@@ -25,8 +49,20 @@
     "name": "A620I Edge",
     "brand": "Gigabyte",
     "category": "motherboard",
-    "price": 119.0,
     "images": ["/images/mobo/a620-itx.png"],
-    "specs": { "socket": "AM5", "ram_type": "DDR5", "form_factor": "ITX" }
+    "specs": {
+      "socket": "AM5",
+      "ram_type": "DDR5",
+      "form_factor": "ITX"
+    },
+    "status": "published",
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 11900,
+        "available": true
+      }
+    ]
   }
 ]

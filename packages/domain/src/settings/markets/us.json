@@ -1,0 +1,6 @@
+{
+  "nameKey": "market_us",
+  "currency": "USD",
+  "minorDigits": 2,
+  "taxBasisPoints": null
+}

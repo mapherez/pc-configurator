@@ -5,9 +5,20 @@
     "name": "Mesh ATX Airflow",
     "brand": "NZXT",
     "category": "case",
-    "price": 109.0,
     "images": ["/images/case/mesh-atx.png"],
-    "specs": { "max_gpu_length_mm": 360, "mobo_support": ["ATX", "mATX", "ITX"] }
+    "specs": {
+      "max_gpu_length_mm": 360,
+      "mobo_support": ["ATX", "mATX", "ITX"]
+    },
+    "status": "published",
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 10900,
+        "available": true
+      }
+    ]
   },
   {
     "id": "case-compact-itx",
@@ -15,8 +26,19 @@
     "name": "Compact ITX",
     "brand": "Cooler Master",
     "category": "case",
-    "price": 89.0,
     "images": ["/images/case/compact-itx.png"],
-    "specs": { "max_gpu_length_mm": 320, "mobo_support": ["ITX"] }
+    "specs": {
+      "max_gpu_length_mm": 320,
+      "mobo_support": ["ITX"]
+    },
+    "status": "published",
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 8900,
+        "available": true
+      }
+    ]
   }
 ]

@@ -1,11 +1,10 @@
 import { defineConfig, lazyPlugins } from "vite-plus";
 import react from "@vitejs/plugin-react";
-import tailwind from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: lazyPlugins(() => [react(), tailwind()]),
+  plugins: lazyPlugins(() => [react()]),
   base: "/",
   server: { proxy: { "/api": "http://127.0.0.1:3001" } },
   build: {

@@ -13,7 +13,7 @@
     "dev:server": "npm run dev -w apps/server",
     "build:frontend": "npm run build -w apps/frontend",
     "build:server": "npm run build -w apps/server",
-    "test": "npm run test:run -w apps/frontend && npm run test:run -w apps/server",
+    "test": "npm run test:run --workspace=@pc-configurator/domain && npm run test:run --workspace=frontend && npm run test:run --workspace=server",
     "lint": "npm run lint -w apps/frontend && npm run lint -w apps/server",
     "typecheck": "npm run typecheck -w apps/server && npm run typecheck -w apps/frontend",
     "prepare": "node --input-type=module -e \"import { existsSync } from 'node:fs'; if (existsSync('scripts/install-hooks.mjs')) await import('./scripts/install-hooks.mjs');\"",
@@ -30,7 +30,9 @@
     "test:format": "node --test scripts/format-files.test.mjs",
     "start": "npm run start -w apps/server",
     "db:backup": "npm run db:backup -w apps/server",
-    "test:container": "node scripts/test-container.mjs"
+    "test:container": "node scripts/test-container.mjs",
+    "build:domain": "npm run build --workspace=@pc-configurator/domain",
+    "precheck:code": "npm run build:domain"
   },
   "devDependencies": {
     "@prettier/plugin-xml": "3.4.2",

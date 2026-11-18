@@ -88,13 +88,17 @@ Tudo corre no host do proprietário.
 5. Gestão privada e MCP.
 6. Criação/integração dos modelos 3D, animações, desempenho e validação final.
 
-## Estado da primeira entrega
+## Estado público atual
 
-O protótipo é acessível em `/prototype.html` no servidor de desenvolvimento.
-Usa os 14 componentes de exemplo existentes e funciona sem API ou BD. A
-ilustração central é esquemática, sem modelos 3D ou afirmações de precisão física.
-A app anterior continua no entrypoint principal enquanto o protótipo é avaliado.
-As funções do protótipo não constituem ainda a gestão, o MCP ou o deployment final.
+O novo configurador é a interface principal em `/`; `/prototype.html` mantém os
+links existentes. Obtém catálogo e settings da API, com loading/retry e preservação
+de seleção. Preços, regras e contratos são partilhados entre frontend e servidor.
+As seis posições principais têm dados iniciais; armazenamento, cooler e ventoinhas
+estão preparados mas ainda sem catálogo publicado. Há múltiplas posições e
+quantidades, restauro/partilha e indicação de componentes em falta.
+
+A ilustração continua esquemática 2D. Não há ainda gestão privada, autenticação,
+MCP ou modelos 3D. Os dados atuais são demonstrativos.
 
 ## Critérios finais de aceitação
 
@@ -108,15 +112,15 @@ As funções do protótipo não constituem ainda a gestão, o MCP ou o deploymen
 - Desktop e telemóvel utilizáveis por teclado/toque, com alternativa ao 3D.
 - Trabalho local sem commits, push ou execução manual de CI no GitHub.
 
-## Estado da segunda entrega
+## Persistência e configuração
 
-A API usa SQLite local com criação automática e catálogo inicial apenas numa BD
-vazia. Reiniciar não repõe preços ou componentes removidos. Valores líquidos são
-guardados em cêntimos; a API mantém o contrato de leitura da interface existente.
-A escrita pública está fechada até existir a gestão autenticada.
+SQLite local com criação automática e catálogo inicial apenas numa BD vazia.
+Reiniciar não repõe preços ou componentes removidos. Catálogos locais existentes
+são preparados automaticamente preservando dados. Ofertas de mercado guardam
+moeda, disponibilidade e valor líquido inteiro; settings e publicação persistem.
+A API pública só lê componentes publicados e calcula orçamentos sem escrita.
 
-O mesmo processo serve API, frontend e protótipo. Docker Compose mantém os dados
-num volume; o backup usa a API online do SQLite. CI verifica também a imagem,
-persistência e arranque. A release continua a reutilizar a aprovação do código.
-O protótipo ainda usa os JSON de exemplo: a ligação ao catálogo publicado pertence
-às entregas 3 e 4. Não há ainda gestão, autenticação, MCP ou modelos 3D.
+O mesmo processo serve API e frontend. Docker Compose mantém a BD num volume;
+backup usa a API online do SQLite. CI verifica imagem, persistência e arranque.
+A release reutiliza a aprovação do código. Defaults, overrides publicados e
+locales estão descritos em [SETTINGS.md](SETTINGS.md).

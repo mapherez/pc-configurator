@@ -80,6 +80,21 @@ try {
       assert.equal((await fetch(base + asset[1])).status, 200, asset[1]);
     }
   }
+  const published = await (await fetch(`${base}/api/configurator`)).json();
+  assert.equal(published.components.length, 14);
+  assert.equal(published.settings.markets.pt.taxBasisPoints, 2300);
+  const quote = await fetch(`${base}/api/quote`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      version: 1,
+      market: "pt",
+      language: "en-US",
+      lines: [{ slot: "cpu", componentId: "cpu-7800x3d", quantity: 1 }],
+    }),
+  });
+  assert.equal(quote.status, 200);
+  assert.deepEqual((await quote.json()).total, { net: 39999, tax: 9200, gross: 49199 });
   assert.equal((await fetch(`${base}/api/parts`, { method: "POST" })).status, 405);
   assert.equal((await fetch(`${base}/api/missing`)).status, 404);
   docker(
@@ -91,7 +106,7 @@ try {
     `
     import { CatalogStore } from './dist/src/db.js';
     const store = new CatalogStore('/data/catalog.db');
-    store.createPart({slug:'persistent-test', sku:'TEST', name:'Test', brand:'Test', category:'cpu', netMinor:123});
+    store.createPart({id:'persistent-test', sku:'TEST', name:'Test', brand:'Test', category:'cpu', status:'published', offers:[{market:'pt',currency:'EUR',netMinor:123,available:true}]});
     store.close();
   `,
   );

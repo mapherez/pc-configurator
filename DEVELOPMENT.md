@@ -17,7 +17,9 @@ npm run build:server
 
 A suite do servidor usa SQLite real em diretórios temporários e HTTP em loopback.
 Cobre arranque inicial, preservação de alterações, transações, validação de preços,
-rejeição de BD desconhecida, API sem escrita pública, readiness e backup/restauro.
+rejeição de BD desconhecida, API sem escrita pública, readiness, backup/restauro,
+settings persistentes e preservação de catálogos locais existentes. A suite de
+domínio verifica dinheiro, impostos, posições, quantidades, contratos e locales.
 
 ```sh
 docker build -t pc-configurator:local .
@@ -33,6 +35,7 @@ volume usado pela app normal.
 Os hooks são instalados no `prepare` npm ou com `npm run hooks:install`.
 Antes do commit, formatam automaticamente o conteúdo preparado, preservando
 alterações parcialmente staged. Antes do push, verificam formatação e código.
+Alterações no workspace partilhado disparam testes de domínio, frontend e servidor.
 Vite+ cobre JS/TS, JSON, CSS/SCSS, HTML e Markdown. Formatadores complementares
 cobrem shell, Dockerfile, XML/SVG e SQL; outros textos recebem LF e newline final.
 `npm run format` corrige os ficheiros localmente; `format:check` só verifica.
@@ -57,7 +60,7 @@ Exige árvore limpa. O pedido prepara apenas campos de versão permitidos.
 [Workflow](.github/workflows/release.yml) exige aprovação para o commit de origem
 exato, aguardando o CI se necessário. Se falhar ou não existir, não publica.
 O publisher constrói os artefactos com a versão final e empacota código,
-Docker/Compose e os dois builds em `pc-configurator.tar.gz`.
+Docker/Compose, o módulo partilhado e os builds em `pc-configurator.tar.gz`.
 
 Os testes da origem não são repetidos. Alterações de código/dependências exigem
 novo CI. A publicação não altera o host; para atualizar, usa o código/arquivo da

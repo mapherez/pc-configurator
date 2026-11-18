@@ -8,6 +8,7 @@ FROM base AS build
 COPY package.json package-lock.json ./
 COPY apps/frontend/package.json ./apps/frontend/package.json
 COPY apps/server/package.json ./apps/server/package.json
+COPY packages/domain/package.json ./packages/domain/package.json
 RUN npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build:frontend && npm run build:server
@@ -15,6 +16,7 @@ RUN npm run build:frontend && npm run build:server
 FROM base AS dependencies
 COPY package.json package-lock.json ./
 COPY apps/server/package.json ./apps/server/package.json
+COPY packages/domain/package.json ./packages/domain/package.json
 RUN npm ci --omit=dev --workspace=server --include-workspace-root --no-audit --no-fund && mkdir -p apps/server/node_modules
 
 FROM node:26-bookworm-slim AS runtime
@@ -23,6 +25,7 @@ ENV NODE_ENV=production HOST=0.0.0.0 PORT=8080 \
 WORKDIR /app/apps/server
 COPY --from=dependencies /app/node_modules /app/node_modules
 COPY --from=dependencies /app/apps/server/node_modules ./node_modules
+COPY --from=build /app/packages/domain /app/packages/domain
 COPY --from=build /app/apps/server/package.json ./package.json
 COPY --from=build /app/apps/server/dist/src ./dist/src
 COPY --from=build /app/apps/server/dist/catalog ./dist/catalog

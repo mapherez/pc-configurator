@@ -2,10 +2,9 @@
 
 A especificação funcional e a ordem de entregas estão em [SPECIFICATION.md](SPECIFICATION.md).
 
-- Modelo partilhado de componentes/variantes, posições, quantidades e compatibilidade.
-- Settings globais e por mercado; preços líquidos, imposto e publicação validados.
-- Locales completos e independentes do mercado; mensagens de regras por códigos.
-- Ligar o novo configurador aos dados publicados, com estados de erro e retry.
+- Completar os dados técnicos e publicar catálogo para armazenamento, coolers e ventoinhas.
+- Validar e publicar preços/impostos/disponibilidade comerciais para cada mercado.
+- Expandir as regras de compatibilidade com interfaces, dimensões e conectores reais.
 - Gestão privada com NoX Login, permissões, auditoria e publicação explícita.
 - Integração nox-mcp através das mesmas operações da gestão.
 - Persistência de assets, importação/exportação e backups desses assets.

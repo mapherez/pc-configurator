@@ -1,0 +1,85 @@
+{
+  "defaultMarket": "pt",
+  "defaultLanguage": "pt-PT",
+  "languages": ["pt-PT", "en-US"],
+  "features": {
+    "priceFilter": true,
+    "compatibilityFilter": true,
+    "exampleBuild": true
+  },
+  "psuHeadroomBasisPoints": 5000,
+  "slots": [
+    {
+      "id": "cpu",
+      "category": "cpu",
+      "required": true,
+      "maxQuantity": 1
+    },
+    {
+      "id": "motherboard",
+      "category": "motherboard",
+      "required": true,
+      "maxQuantity": 1
+    },
+    {
+      "id": "ram",
+      "category": "ram",
+      "required": true,
+      "maxQuantity": 1
+    },
+    {
+      "id": "ram-2",
+      "category": "ram",
+      "required": false,
+      "maxQuantity": 1
+    },
+    {
+      "id": "gpu",
+      "category": "gpu",
+      "required": true,
+      "maxQuantity": 1
+    },
+    {
+      "id": "psu",
+      "category": "psu",
+      "required": true,
+      "maxQuantity": 1
+    },
+    {
+      "id": "case",
+      "category": "case",
+      "required": true,
+      "maxQuantity": 1
+    },
+    {
+      "id": "storage",
+      "category": "storage",
+      "required": false,
+      "maxQuantity": 1
+    },
+    {
+      "id": "storage-2",
+      "category": "storage",
+      "required": false,
+      "maxQuantity": 1
+    },
+    {
+      "id": "cooler",
+      "category": "cooler",
+      "required": false,
+      "maxQuantity": 1
+    },
+    {
+      "id": "fan",
+      "category": "fan",
+      "required": false,
+      "maxQuantity": 3
+    },
+    {
+      "id": "fan-2",
+      "category": "fan",
+      "required": false,
+      "maxQuantity": 3
+    }
+  ]
+}

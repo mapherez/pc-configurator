@@ -4,11 +4,17 @@ import { execFileSync } from "node:child_process";
 const files = execFileSync("git", ["diff", "--cached", "--name-only", "-z"], { encoding: "utf8" })
   .split("\0")
   .filter(Boolean);
-const shared = files.some((file) =>
-  ["package.json", "package-lock.json", "vite.config.ts"].includes(file),
+const shared = files.some(
+  (file) =>
+    ["package.json", "package-lock.json", "vite.config.ts"].includes(file) ||
+    file.startsWith("packages/domain/"),
 );
 // Catalogue fixtures are consumed by both the server and the prototype.
 const catalog = files.some((file) => file.startsWith("apps/server/catalog/"));
+if (shared)
+  execFileSync("npm", ["run", "test:run", "--workspace", "@pc-configurator/domain"], {
+    stdio: "inherit",
+  });
 for (const workspace of ["frontend", "server"]) {
   const impacted =
     shared ||
