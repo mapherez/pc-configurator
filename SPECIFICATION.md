@@ -68,7 +68,7 @@ Tudo corre no host do proprietário.
 ## Arquitetura alvo
 
 - React e Vite+ no frontend; servidor TypeScript com operações de domínio próprias.
-- SQLite local através de better-sqlite3, sem Prisma ou dependência de BD externa.
+- SQLite local através de better-sqlite3, sem dependência de BD externa.
 - Consultas parametrizadas, transações, contratos tipados e validação das entradas.
 - Um contentor serve frontend e API na mesma origem. Dados e assets são persistentes.
 - Primeiro arranque prepara a estrutura e o catálogo inicial automaticamente.
@@ -107,3 +107,16 @@ As funções do protótipo não constituem ainda a gestão, o MCP ou o deploymen
 - Percursos públicos e privados testados com BD real e contentor construído.
 - Desktop e telemóvel utilizáveis por teclado/toque, com alternativa ao 3D.
 - Trabalho local sem commits, push ou execução manual de CI no GitHub.
+
+## Estado da segunda entrega
+
+A API usa SQLite local com criação automática e catálogo inicial apenas numa BD
+vazia. Reiniciar não repõe preços ou componentes removidos. Valores líquidos são
+guardados em cêntimos; a API mantém o contrato de leitura da interface existente.
+A escrita pública está fechada até existir a gestão autenticada.
+
+O mesmo processo serve API, frontend e protótipo. Docker Compose mantém os dados
+num volume; o backup usa a API online do SQLite. CI verifica também a imagem,
+persistência e arranque. A release continua a reutilizar a aprovação do código.
+O protótipo ainda usa os JSON de exemplo: a ligação ao catálogo publicado pertence
+às entregas 3 e 4. Não há ainda gestão, autenticação, MCP ou modelos 3D.

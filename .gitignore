@@ -27,7 +27,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-apps/server/prisma/dev.db
 
 .vitest/
 
@@ -36,3 +35,9 @@ apps/server/prisma/dev.db
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+
+# Local runtime data and backups
+apps/server/data/
+*.db
+*.db-shm
+*.db-wal

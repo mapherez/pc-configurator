@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: lazyPlugins(() => [react(), tailwind()]),
-  // Vercel/Render deployments serve from root
   base: "/",
+  server: { proxy: { "/api": "http://127.0.0.1:3001" } },
   build: {
     rolldownOptions: {
       input: {

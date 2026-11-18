@@ -9,7 +9,8 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "outDir": "dist",
-    "rootDir": "."
+    "rootDir": ".",
+    "resolveJsonModule": true
   },
-  "include": ["src", "prisma/seed.ts", "scripts/**/*.ts"]
+  "include": ["src", "test", "catalog/*.json"]
 }

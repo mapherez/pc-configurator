@@ -17,12 +17,6 @@ export type ApiPart = {
 };
 
 export function getApiBase(): string {
-  const envBase = (import.meta as ImportMeta).env?.VITE_API_BASE as string | undefined;
-  if (envBase && envBase.length > 0) return envBase.replace(/\/$/, "");
-  // Dev convenience: if running via Vite default port, target local server
-  if (typeof window !== "undefined" && window.location?.port === "5173")
-    return "http://localhost:3001";
-  // Default to relative (useful when behind same-origin reverse proxy)
   return "";
 }
 
@@ -37,5 +31,10 @@ export async function fetchParts(): Promise<ApiPart[]> {
     const data = (await res.json()) as ApiPart[];
     return data;
   })();
-  return partsCache;
+  try {
+    return await partsCache;
+  } catch (error) {
+    partsCache = null;
+    throw error;
+  }
 }

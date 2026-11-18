@@ -1,6 +1,5 @@
 import type { FormatConfig } from "vite-plus/fmt";
 import formatOptions from "./scripts/format-options.json" with { type: "json" };
-// vp migrate: merged .oxlintrc.json (a883c970710c3cb5449594db3642cd94).
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({

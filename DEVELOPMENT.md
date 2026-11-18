@@ -1,72 +1,65 @@
 # Desenvolvimento, CI e release
 
-O contrato é o mesmo em todos os projetos: commit/push de código → CI completo → pedido explícito de release → reutilização da aprovação → build/empacotamento/publicação.
+Node.js 26.13.1+ da série 26, npm 11.20.0 e um único lockfile npm workspaces.
+A instalação autoriza explicitamente o script nativo do better-sqlite3.
 
-## Uso
+## Verificações locais
 
 ```sh
-npm run hooks:install
-# Editar, fazer commit e push do código na branch main.
-# Aguardar o CI de origem, ou deixar a release aguardar pela sua conclusão.
+npm ci
+npm run format:check
+npm run lint
+npm run typecheck
+npm test
+npm run build:frontend
+npm run build:server
+```
+
+A suite do servidor usa SQLite real em diretórios temporários e HTTP em loopback.
+Cobre arranque inicial, preservação de alterações, transações, validação de preços,
+rejeição de BD desconhecida, API sem escrita pública, readiness e backup/restauro.
+
+```sh
+docker build -t pc-configurator:local .
+npm run test:container
+```
+
+O teste cria apenas um contentor e volume próprios, valida a distribuição Linux,
+assets e persistência e remove os seus recursos no final. Nunca aponta para o
+volume usado pela app normal.
+
+## Hooks e formatação
+
+Os hooks são instalados no `prepare` npm ou com `npm run hooks:install`.
+Antes do commit, formatam automaticamente o conteúdo preparado, preservando
+alterações parcialmente staged. Antes do push, verificam formatação e código.
+Vite+ cobre JS/TS, JSON, CSS/SCSS, HTML e Markdown. Formatadores complementares
+cobrem shell, Dockerfile, XML/SVG e SQL; outros textos recebem LF e newline final.
+`npm run format` corrige os ficheiros localmente; `format:check` só verifica.
+`NOX_SKIP_HOOKS=1` desativa hooks nesse processo; não contorna o CI obrigatório.
+
+## CI
+
+[Workflow](.github/workflows/ci.yml): lint, testes frontend/servidor, tipos, builds,
+formatação e teste do contentor. Um novo push cancela o CI anterior da mesma
+branch. Os testes da política de release continuam separados. A aprovação só é
+emitida se todas as verificações da origem passarem.
+
+## Release
+
+```sh
 npm run release
-# Ou indicar a versão diretamente:
+# Ou uma versão explícita:
 npm run release -- X.Y.Z
 ```
 
-O script de release exige uma árvore limpa. Prepara apenas os campos de versão permitidos; alterações de código ou de dependências externas obrigam a novo CI. O pedido de release não volta a executar os testes de origem. Se a aprovação estiver pendente, o publisher aguarda; se falhar ou não existir, para antes de construir/publicar. Para recuperar, corrige ou repete o CI do commit de origem e volta a executar o workflow de release que falhou.
+Exige árvore limpa. O pedido prepara apenas campos de versão permitidos.
+[Workflow](.github/workflows/release.yml) exige aprovação para o commit de origem
+exato, aguardando o CI se necessário. Se falhar ou não existir, não publica.
+O publisher constrói os artefactos com a versão final e empacota código,
+Docker/Compose e os dois builds em `pc-configurator.tar.gz`.
 
-A aprovação pertence ao commit de origem exato; não basta existir outro CI verde no repositório.
-
-## Hooks e verificações locais
-
-Os hooks ficam ativos com `npm run hooks:install` e são reinstalados no prepare npm. Os frontends com instalação separada também fazem a instalação quando os scripts da raiz estão presentes. Os builds de distribuição sem esses scripts saltam esta configuração.
-
-- Antes do commit: formatação automática do conteúdo preparado para commit, com Vite+ e os formatadores nativos; as correções entram automaticamente no stage. NoteX mantém as verificações SCSS; voice usa Ruff; PC Configurator usa as regras migradas para Vite+ e preserva os testes impactados.
-- Antes do push: `npm run prepush`, com as verificações próprias da stack. Um push composto apenas pelo pedido de release é reconhecido e deixa a aprovação para o GitHub, sem repetir os checks locais.
-- `npm run check`: `node scripts/git-hooks.mjs check`.
-- `NOX_SKIP_HOOKS=1` permite desativar os hooks num processo local; a aprovação obrigatória no GitHub continua ativa.
-
-## CI e distribuição
-
-[CI](.github/workflows/ci.yml) · [Release](.github/workflows/release.yml)
-
-Anexa o frontend compilado e um arquivo do repositório com o servidor compilado à GitHub Release. O servidor continua a precisar das dependências e da geração Prisma habituais. Os deploys Vercel/Render mantêm a configuração própria.
-
-Os builds de publicação continuam necessários para incorporar a nova versão, plataformas e assinatura. Smoke checks do artefacto final não equivalem a repetir a suite de testes de origem.
-
-## Vite+ e formatação
-
-Vite+ 1.6.0 no monorepo, com regras ESLint migradas e testes impactados preservados. Vitest 5.1 é dependência direta para alinhar o peer de jest-dom com o Vitest incluído no Vite+. Os antigos locks pnpm isolados foram removidos: npm workspaces usa o package-lock.json da raiz. O Prisma CLI 7 incompatível com o Client/schema 6 foi alinhado com Client/adaptador 6.19.0; o CLI também existe na raiz para resolver corretamente o Client hoisted. O schema e os dados não foram migrados. Os 8 testes e os builds frontend/servidor passaram.
-
-- Formatar: `npm run format`.
-- Verificar formato/lint/tipos JS/TS: `npm run check:code`.
-- O hook formata o stage com Vite+ e as ferramentas nativas, incluindo CSS/SCSS e Go; push e CI verificam a mesma configuração.
-- Oxfmt usa espaços, LF e `insertFinalNewline: true`. Ficheiros gerados, dependências e outputs ficam excluídos.
-- A configuração VS Code na pasta `.` recomenda o Vite Plus Extension Pack e ativa formatação ao guardar. Instalar a extensão recomendada permite usar essa integração; os hooks funcionam pela CLI.
-- Go/Rust/Python continuam com as ferramentas próprias onde se aplicam.
-
-Os checks bloqueiam erros e problemas de formatação. Alguns projetos têm avisos de lint em código anterior, mantidos visíveis sem alterar silenciosamente o comportamento da aplicação. Documentação: [Vite+](https://viteplus.dev/guide/) · [Hooks](https://viteplus.dev/guide/commit-hooks).
-
-## Automatic formatting
-
-`npm run format` formats all tracked source and text files. `npm run format:check`
-checks the same files with the same configuration, without changing them.
-The pre-commit hook formats staged contents and updates the index automatically,
-including native languages. Unstaged edits stay unstaged; overlapping edits cause
-an explicit error before any file or index change. Push reads the committed blobs (uncommitted fixes cannot mask an invalid commit).
-Source CI verifies the same formatting; the push hook never rewrites an existing commit.
-
-Vite+ formats JS/TS, JSX/TSX, CSS/SCSS/Less, HTML, JSON, YAML, TOML, Markdown and
-Svelte where used. Go uses gofmt and go mod edit -fmt, Rust uses rustfmt, Python uses pinned Ruff via
-uv, Prisma uses its CLI, and complementary formatters cover shell/Dockerfile,
-PowerShell, SQL, XML/SVG and nginx configuration. Other UTF-8 text receives LF,
-trailing-space cleanup and a final newline (Makefile tabs are preserved).
-Install Node dependencies before committing, plus Go/Rust/uv for the native
-languages present in the repository. Missing formatters fail with an error.
-
-Binary assets, vendored code, licenses, machine-generated lockfiles and historical
-SQL migrations are preserved. The exact immutable migration list is documented
-in `format-policy.json` next to the formatter; new migration files are formatted.
-Generated source must be formatted by its generator. Formatting options are shared
-between Vite+ and the hooks through `format-options.json`. For standalone frontend
-builds this JSON lives inside frontend/web and format-policy.json selects its path.
+Os testes da origem não são repetidos. Alterações de código/dependências exigem
+novo CI. A publicação não altera o host; para atualizar, usa o código/arquivo da
+release e reconstrói o serviço mantendo o volume. As releases continuam em fila
+sem cancelamento. O procedimento do host está no [README](README.md).

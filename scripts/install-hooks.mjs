@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-if (!process.env.CI && !process.env.VERCEL && process.env.NOX_SKIP_HOOKS !== "1") {
+if (!process.env.CI && process.env.NOX_SKIP_HOOKS !== "1") {
   const git = (...args) =>
     execFileSync("git", args, {
       cwd: root,

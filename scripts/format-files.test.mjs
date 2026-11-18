@@ -95,11 +95,6 @@ void test("native formatters format source and remain idempotent", async () => {
     [".py", "a.py", "def f( ):\n return {'a':1}"],
     [".rs", "a.rs", 'pub fn f(){println!("hi");}'],
     [".ps1", "a.ps1", "if($true){Write-Output 'hi'}"],
-    [
-      ".prisma",
-      "a.prisma",
-      'datasource db {\nprovider = "sqlite"\nurl = "file:./test.db"\n}\nmodel Example {\nid Int @id\n}',
-    ],
     [".sql", "new.sql", "select a,b from example where a=1;"],
     [".svelte", "a.svelte", "<script>let x=1</script><p>{x}</p>"],
   ];

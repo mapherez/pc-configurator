@@ -1,101 +1,119 @@
 # PC Configurator
 
-The current product specification is in [SPECIFICATION.md](SPECIFICATION.md).
-Run `npm run dev:prototype` to open the new public configurator prototype.
-It works with the existing sample catalog without an API or database. Its
-central assembly illustration is 2D; 3D models and animations are a later delivery.
+Configurador de computadores com catálogo de componentes, seleção de peças e
+verificações de compatibilidade. React/TypeScript e Vite+ no frontend;
+Express/TypeScript e SQLite local no servidor. O mesmo serviço serve site e API.
 
-Build custom PC lists, filter parts, and get compatibility hints. Frontend in React + Vite, backend in Express + Prisma, SQLite locally with Turso (libSQL) in production - all in a single monorepo.
+O redesenho público está em `/prototype.html`: catálogo à esquerda, montagem
+esquemática ao centro e resumo à direita. Ainda usa dados de exemplo e não precisa
+de modelos 3D. O desenvolvimento completo está definido em [SPECIFICATION.md](SPECIFICATION.md).
 
-## Live Demo
+## Desenvolvimento local
 
-https://pc-configurator-frontend.vercel.app/
+Requisitos: Node.js 26.13.1 ou superior da série 26 e npm 11.20.0.
 
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)
-![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
-![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite)
-![Express](https://img.shields.io/badge/Express-4-000000?logo=express)
-![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?logo=prisma)
-![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite)
-![Turso](https://img.shields.io/badge/Database-Turso-7F5AF0)
-![Vercel](https://img.shields.io/badge/Hosted_on-Vercel-000000?logo=vercel)
-![Render](https://img.shields.io/badge/API_on-Render-46E3B7?logo=render)
+```sh
+npm ci
+npm run dev:server
+```
 
-# Overview
+Noutro terminal:
 
-- Frontend: React + TypeScript (Vite), Tailwind, Redux Toolkit.
-- Backend: Express + TypeScript, Prisma ORM, Zod validation.
-- Database: SQLite (file-based for dev) and Turso libSQL in production.
-- Deploy: Vercel (frontend) + Render (API). GitHub Actions for CI.
+```sh
+npm run dev:prototype
+```
 
-## Monorepo Structure
+Para a interface anterior, `npm run dev:frontend`. O Vite encaminha `/api` para
+`127.0.0.1:3001`, independentemente da porta escolhida para o frontend. Não é
+necessário configurar um URL de API ou credenciais de BD. O primeiro arranque do
+servidor cria `apps/server/data/catalog.db` e os 14 componentes de exemplo.
 
-- `apps/frontend`: Vite + React UI
-- `apps/server`: Express + Prisma API
-- `packages/*`: shared packages (future)
+## Correr no teu host
 
-## Getting Started
+Com Docker e Compose, a partir da raiz do repositório:
 
-- Requirements: Node 18+ and npm. Turso CLI optional for remote management.
-- Install: run `npm ci` at the repo root to install workspaces.
-- Environment:
-  - `apps/server`: copy `.env.example` to `.env`. Defaults use SQLite (`file:./dev.db`). Set `TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN` when targeting Turso.
-  - `apps/frontend`: create `.env` with `VITE_API_BASE` (optional in dev; see below).
-- Development:
-  - API: `npm run dev -w apps/server` ? http://localhost:3001
-  - Frontend: `npm run dev -w apps/frontend` ? http://localhost:5173
-  - Dev fallback: the frontend auto-targets `http://localhost:3001` when running on port 5173.
+```sh
+docker compose up --build -d
+```
 
-## Database + Prisma
+Abre `http://127.0.0.1:8080` ou `/prototype.html`. O volume `app-data` guarda a BD
+fora do contentor; reiniciar, reconstruir ou substituir o contentor preserva os
+componentes e preços existentes. O catálogo inicial só é aplicado numa BD vazia.
 
-- Schema: `apps/server/prisma/schema.prisma`
-- Migrations: `apps/server/prisma/migrations/`
-- Workflow (ordered helpers):
-  1. `npm run db:0:generate -w apps/server`
-  2. `npm run db:1:migrate:local -w apps/server`
-  3. `npm run db:2:apply:turso -w apps/server [-- <folder>]`
-  4. `npm run db:3:seed:turso -w apps/server`
-- Local-only seed: unset Turso vars, then `npm run seed -w apps/server`
-- Seed fixtures live in `apps/server/prisma/data`
+A porta fica ligada ao loopback por defeito. Um reverse proxy no host pode servir
+o domínio com HTTPS e encaminhar **todos** os caminhos para `127.0.0.1:8080`.
+Para acesso direto na LAN: `PC_CONFIGURATOR_BIND=0.0.0.0 docker compose up -d`.
+A porta externa pode ser definida com `PC_CONFIGURATOR_PORT`.
 
-## API Endpoints
+```sh
+docker compose ps
+docker compose logs --tail=100 app
+curl --fail http://127.0.0.1:8080/health
+```
 
-- `GET /health` ? health info
-- `GET /api/parts` ? list parts (includes category)
-- `POST /api/parts` ? create a part; body: `{ name: string, price: number, categoryId?: number }`
+`/health` responde 200 apenas quando a estrutura da BD está utilizável; responde
+503 quando a BD falha. A API pública permite leitura em `GET /api/parts`. A
+criação anónima está fechada. A gestão autenticada e MCP são uma entrega futura.
 
-## Scripts (root)
+## Backup e restauro
 
-- `dev:frontend` ? `npm run dev -w apps/frontend`
-- `dev:server` ? `npm run dev -w apps/server`
-- `build:frontend` ? `npm run build -w apps/frontend`
-- `build:server` ? `npm run build -w apps/server`
-- `test` (frontend) ? `npm run test -w apps/frontend` or `npm run test:run -w apps/frontend`
+Com a app em execução:
 
-## Deploy
+```sh
+docker compose exec app node dist/src/backup.js /data/catalog-backup.db
+docker compose cp app:/data/catalog-backup.db ./catalog-backup.db
+```
 
-- Frontend (Vercel):
-  - Root Directory: `apps/frontend`
-  - Build Command: `npm run build`
-  - Output Directory: `dist`
-  - Environment Variables: set `VITE_API_BASE` to your API origin (e.g., `https://pc-configurator-api-s40v.onrender.com`).
-- Backend (Render + Turso):
-  - Web Service from this repo (monorepo root).
-  - Build Command: `npm ci && npm run db:0:generate -w apps/server && npm run build:server`
-  - Start Command: `npm run db:2:apply:turso -w apps/server && npm run start -w apps/server`
-  - Environment Variables: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `NODE_ENV=production`, `CORS_ORIGINS`.
+Escolhe um nome novo em cada backup. O comando recusa sobrescrever ficheiros e
+usa o mecanismo online do SQLite, incluindo alterações ainda presentes no WAL.
+Mantém uma cópia fora do host. Não copies apenas `catalog.db` enquanto a app corre.
 
-## Notes
+Para restaurar, mantém o contentor existente mas para o processo, substitui a BD
+e elimina os ficheiros auxiliares antigos antes de voltar a arrancar:
 
-- CORS: server allows `.vercel.app` by default; add custom domains in `CORS_ORIGINS`.
-- `DATABASE_URL` defaults to the local SQLite file and is overridden when `TURSO_DATABASE_URL` is present.
-- `VITE_API_BASE`: set for production/frontend builds; dev falls back to `http://localhost:3001` when Vite runs on port 5173.
-- Secrets: keep production secrets in hosting provider env vars, not committed files.
+```sh
+docker compose stop app
+docker compose run --rm --no-deps --user 0 --entrypoint sh app -c 'rm -f /data/catalog.db-wal /data/catalog.db-shm'
+docker compose cp ./catalog-backup.db app:/data/catalog.db
+docker compose run --rm --no-deps --user 0 --entrypoint sh app -c 'chown 10001:10001 /data/catalog.db'
+docker compose start app
+curl --fail http://127.0.0.1:8080/health
+```
 
-## Roadmap
+O restauro substitui o catálogo atual pelo backup escolhido. Faz um backup atual
+antes de restaurar. `docker compose down` preserva o volume; `down -v` apaga-o.
 
-- Category ordering and improved filters
-- Backend filtering/pagination
-- Saved builds and user sessions
-- Shared types package
-- Add 3D PC model to stage
+## Executar sem Docker
+
+```sh
+npm ci
+npm run build:frontend
+npm run build:server
+NODE_ENV=production npm start
+```
+
+O site e API ficam em `http://127.0.0.1:3001`. As opções estão em
+[apps/server/.env.example](apps/server/.env.example). Os caminhos relativos são
+resolvidos a partir de `apps/server` quando os comandos usam npm workspaces.
+Para backup: `npm run db:backup -- /caminho/absoluto/catalog-backup.db`.
+
+## Validação e release
+
+```sh
+npm run format:check
+npm run lint
+npm run typecheck
+npm test
+npm run build:frontend
+npm run build:server
+docker build -t pc-configurator:local .
+npm run test:container
+```
+
+O teste do contentor usa uma BD e um volume temporários próprios e remove-os no
+fim. Verifica assets, API, backup, reinício, substituição e encerramento.
+
+CI valida código, testes, formatação e contentor. `npm run release` reutiliza a
+aprovação do commit de origem e publica um arquivo com código e builds completos,
+sem repetir os testes de origem. Não instala nem atualiza automaticamente o host.
+Ver [DEVELOPMENT.md](DEVELOPMENT.md).

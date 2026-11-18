@@ -65,16 +65,18 @@ jobs:
         run: npm ci
       - name: Lint frontend and server
         run: npm run lint
-      - name: Test frontend
-        run: npm run test:run -w apps/frontend
-      - name: Generate Prisma client
-        run: npm run prisma:generate -w apps/server
+      - name: Test frontend and real SQLite API
+        run: npm test
       - name: Check server and frontend types
         run: npm run typecheck
       - name: Build frontend
         run: npm run build -w apps/frontend
       - name: Build server
         run: npm run build -w apps/server
+      - name: Build self-hosted image
+        run: docker build --tag pc-configurator:ci .
+      - name: Check image, persistence and shutdown
+        run: npm run test:container -- pc-configurator:ci
 
   formatting:
     name: Formatting

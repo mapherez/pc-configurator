@@ -11,7 +11,7 @@ trim_trailing_whitespace = true
 [*.md]
 trim_trailing_whitespace = false
 
-[*.{svelte,vue,md,mdx,toml,svg,xml,sh,bash,zsh,ps1,prisma,sql}]
+[*.{svelte,vue,md,mdx,toml,svg,xml,sh,bash,zsh,ps1,sql}]
 indent_style = space
 indent_size = 2
 

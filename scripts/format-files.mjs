@@ -3,10 +3,8 @@ import { readFileSync, writeFileSync, lstatSync, existsSync, mkdtempSync, rmSync
 import { dirname, resolve, extname, basename, join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { createRequire } from "node:module";
 
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const require = createRequire(join(root, "package.json"));
 const policy = JSON.parse(readFileSync(new URL("./format-policy.json", import.meta.url), "utf8"));
 const options = JSON.parse(
   readFileSync(
@@ -65,7 +63,7 @@ export function formatterFor(path) {
     )
   )
     return "lockfile";
-  if (policy.immutable?.includes(path)) return "immutable migration";
+  if (policy.immutable?.includes(path)) return "immutable source";
   if (policy.jsxFixtures?.includes(path)) return "vite-plus";
   const ext = extname(path).toLowerCase();
   if (basename(path) === "go.mod") return "gomod";
@@ -77,7 +75,6 @@ export function formatterFor(path) {
   if (name === "Dockerfile" || ext === ".dockerfile") return "dockerfile";
   if ([".svg", ".xml"].includes(ext)) return "xml";
   if ([".ps1", ".psm1", ".psd1"].includes(ext)) return "powershell";
-  if (ext === ".prisma") return "prisma";
   if (ext === ".sql") return "sql";
   if (ext === ".conf" || path.endsWith(".conf.template")) return "nginx";
   // Text formats without a syntax formatter (Makefile, git attributes, env,
@@ -91,7 +88,7 @@ async function dependency(specifier) {
 
 export async function formatContent(path, contents) {
   const formatter = formatterFor(path);
-  if (["ignored", "asset", "lockfile", "immutable migration"].includes(formatter)) return contents;
+  if (["ignored", "asset", "lockfile", "immutable source"].includes(formatter)) return contents;
   // Detect binary and non-UTF8 content before applying text normalization.
   const buffer = Buffer.isBuffer(contents) ? contents : Buffer.from(contents);
   if (buffer.includes(0) || !Buffer.from(buffer.toString("utf8")).equals(buffer)) {
@@ -151,21 +148,6 @@ export async function formatContent(path, contents) {
   } else if (formatter === "sql") {
     const { format } = await dependency("sql-formatter");
     formatted = format(source, { language: policy.sqlDialect ?? "postgresql", tabWidth: 2 });
-  } else if (formatter === "prisma") {
-    const directory = mkdtempSync(join(tmpdir(), "nox-prisma-format-"));
-    try {
-      const file = join(directory, "schema.prisma");
-      writeFileSync(file, source);
-      execute(process.execPath, [
-        require.resolve("prisma/build/index.js"),
-        "format",
-        "--schema",
-        file,
-      ]);
-      formatted = readFileSync(file, "utf8");
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
-    }
   } else if (["shell", "dockerfile", "xml", "powershell", "nginx"].includes(formatter)) {
     const plugins = {
       shell: "prettier-plugin-sh",
@@ -235,8 +217,7 @@ export async function formatFiles({ staged = false, check = false, revision } = 
   }
   const changes = [];
   for (const { path, mode, oid } of entries) {
-    if (["ignored", "asset", "lockfile", "immutable migration"].includes(formatterFor(path)))
-      continue;
+    if (["ignored", "asset", "lockfile", "immutable source"].includes(formatterFor(path))) continue;
     const file = resolve(root, path);
     if (!staged && !revision && (!existsSync(file) || !lstatSync(file).isFile())) continue;
     const blob =
@@ -246,8 +227,7 @@ export async function formatFiles({ staged = false, check = false, revision } = 
     if (blob && blob.status !== 0) throw new Error(`Cannot read staged ${path}`);
     const original = blob ? blob.stdout : readFileSync(file);
     // cat-file's UTF8 decoding must not turn binary staged blobs into text.
-    if (["ignored", "asset", "lockfile", "immutable migration"].includes(formatterFor(path)))
-      continue;
+    if (["ignored", "asset", "lockfile", "immutable source"].includes(formatterFor(path))) continue;
     let formatted;
     try {
       formatted = Buffer.from(await formatContent(path, original));

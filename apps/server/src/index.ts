@@ -1,39 +1,30 @@
-import "dotenv/config";
-import express, { type Request, type Response, type NextFunction } from "express";
-import cors from "cors";
 import { env } from "./env.js";
-import { prisma } from "./db.js";
-import { partsRouter } from "./routes/parts.js";
+import { CatalogStore } from "./db.js";
+import { createApp } from "./app.js";
 
-const app = express();
-app.use(express.json());
-
-const corsOptions: cors.CorsOptions = {
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    if (!origin) return callback(null, true);
-    const allowed = env.CORS_ORIGINS.some((o) => {
-      if (o instanceof RegExp) return o.test(origin);
-      return o === origin;
+const store = new CatalogStore(env.databaseFile);
+try {
+  const server = createApp(store, env.webDir).listen(env.PORT, env.HOST, () => {
+    console.log(`PC Configurator listening on http://${env.HOST}:${env.PORT}`);
+  });
+  server.on("error", (error) => {
+    console.error(error);
+    store.close();
+    process.exitCode = 1;
+  });
+  let stopping = false;
+  const shutdown = () => {
+    if (stopping) return;
+    stopping = true;
+    const deadline = setTimeout(() => process.exit(1), 10_000).unref();
+    server.close(() => {
+      store.close();
+      clearTimeout(deadline);
     });
-    if (allowed) callback(null, true);
-    else callback(new Error(`Origin not allowed by CORS: ${origin}`));
-  },
-  credentials: true,
-};
-app.use(cors(corsOptions));
-
-app.get("/health", (_req: Request, res: Response) => {
-  res.json({ ok: true, env: env.NODE_ENV, time: new Date().toISOString() });
-});
-
-app.use("/api", partsRouter(prisma));
-
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(err);
-  res.status(500).json({ error: "Internal Server Error" });
-});
-
-const port = env.PORT ?? 3001;
-app.listen(port, () => {
-  console.log(`API listening on http://localhost:${port}`);
-});
+  };
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
+} catch (error) {
+  store.close();
+  throw error;
+}
