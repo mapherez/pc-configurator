@@ -9,6 +9,7 @@
   "type": "module",
   "scripts": {
     "dev:frontend": "npm run dev -w apps/frontend",
+    "dev:prototype": "npm run dev:prototype -w apps/frontend",
     "dev:server": "npm run dev -w apps/server",
     "build:frontend": "npm run build -w apps/frontend",
     "build:server": "npm run build -w apps/server",

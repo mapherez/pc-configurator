@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vp dev",
+    "dev:prototype": "vp dev --open /prototype.html",
     "build": "tsc -b && vp build",
     "typecheck": "tsc -b",
     "lint": "vp lint .",

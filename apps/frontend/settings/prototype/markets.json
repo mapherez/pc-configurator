@@ -1,0 +1,4 @@
+{
+  "pt": { "currency": "EUR", "taxBasisPoints": 2300, "hasPrices": true },
+  "us": { "currency": "USD", "taxBasisPoints": null, "hasPrices": false }
+}

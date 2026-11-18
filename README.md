@@ -1,5 +1,10 @@
 # PC Configurator
 
+The current product specification is in [SPECIFICATION.md](SPECIFICATION.md).
+Run `npm run dev:prototype` to open the new public configurator prototype.
+It works with the existing sample catalog without an API or database. Its
+central assembly illustration is 2D; 3D models and animations are a later delivery.
+
 Build custom PC lists, filter parts, and get compatibility hints. Frontend in React + Vite, backend in Express + Prisma, SQLite locally with Turso (libSQL) in production - all in a single monorepo.
 
 ## Live Demo
