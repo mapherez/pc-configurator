@@ -19,8 +19,6 @@ services:
     depends_on:
       auth-setup:
         condition: service_completed_successfully
-    environment:
-      PC_CONFIGURATOR_OWNER_EMAIL: ${PC_CONFIGURATOR_OWNER_EMAIL:?Set the owner verified email}
     volumes:
       - nox-suite-local:/run/nox-suite
 

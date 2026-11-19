@@ -13,7 +13,7 @@ import type { CatalogStore } from "./db.js";
 export function createApp(
   store: CatalogStore,
   webDir?: string,
-  management: { login?: NoXLogin; ownerEmail?: string; dataDirectory?: string } = {},
+  management: { login?: NoXLogin; dataDirectory?: string } = {},
 ) {
   prepareManagement(store);
   const app = express();
@@ -24,7 +24,7 @@ export function createApp(
     next();
   });
   const admin = managementRoutes(
-    new AdminAuth(store, management.login, management.ownerEmail ?? ""),
+    new AdminAuth(store, management.login),
     new ManagementService(store, management.dataDirectory ?? dirname(store.database.name)),
   );
   app.locals.closeManagement = admin.close;

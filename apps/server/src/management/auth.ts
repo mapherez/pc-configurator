@@ -39,7 +39,6 @@ export class AdminAuth {
   constructor(
     readonly store: CatalogStore,
     readonly login: NoXLogin | undefined,
-    readonly ownerEmail: string,
   ) {}
   get enabled() {
     return Boolean(this.login);
@@ -107,19 +106,13 @@ export class AdminAuth {
       const exists = db
         .prepare("SELECT * FROM auth_principals WHERE issuer = ? AND subject = ?")
         .get(issuer, subject) as Principal | undefined;
-      const owners = db
-        .prepare("SELECT count(*) AS n FROM auth_principals WHERE role = 'owner'")
-        .get() as { n: number };
-      const bootstrapOwner =
-        !owners.n && credentials.identity.email.toLowerCase() === this.ownerEmail.toLowerCase();
-      const role: Role = bootstrapOwner ? "owner" : (exists?.role ?? "unassigned");
+      // NoX Auth already verifies Google identity and central administrator admission.
+      // Like Backend, admit new administrators without a second email allowlist,
+      // while preserving any role explicitly assigned within this application.
+      const role: Role = exists?.role ?? "owner";
       db.prepare(
         "INSERT INTO auth_principals(issuer,subject,email,name,role) VALUES (?,?,?,?,?) ON CONFLICT(issuer,subject) DO UPDATE SET email = excluded.email,name = excluded.name",
       ).run(issuer, subject, credentials.identity.email, credentials.identity.name, role);
-      if (bootstrapOwner)
-        db.prepare(
-          "UPDATE auth_principals SET role = 'owner' WHERE issuer = ? AND subject = ?",
-        ).run(issuer, subject);
       db.prepare("DELETE FROM auth_sessions WHERE expires <= ?").run(Date.now());
       db.prepare(
         "INSERT INTO auth_sessions(hash,issuer,subject,credential,expires,renew_at,csrf,created) VALUES (?,?,?,?,?,?,?,?)",

@@ -178,7 +178,7 @@
   "adminRole_editor": "Editor",
   "adminRole_publisher": "Publicador",
   "adminRole_owner": "Proprietário",
-  "adminRoleHint": "As contas aparecem aqui depois do primeiro NoX Login. A admissão central continua a ser obrigatória.",
+  "adminRoleHint": "Novos administradores admitidos pelo NoX Auth recebem acesso de proprietário. Podes restringir o papel local; a escolha mantém-se nos logins seguintes e a admissão central continua obrigatória.",
   "adminDelegations": "Acessos para AI / MCP",
   "adminDelegationHint": "Cada acesso é limitado à tua sessão NoX, ao prazo escolhido e às permissões atribuídas. O logout ou a revogação impede novas chamadas.",
   "adminTokenName": "Nome deste acesso",

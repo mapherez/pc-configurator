@@ -10,8 +10,8 @@ O NoX Auth deve estar ativo e admitir o email do proprietário. A partir da raiz
 
 1. Copia `.env.example` para `.env`.
 2. Define `PC_CONFIGURATOR_PUBLIC_URL` com a origem exata usada no browser,
-   `NOX_AUTH_PUBLIC_URL` com a origem HTTPS do NoX Auth e
-   `PC_CONFIGURATOR_OWNER_EMAIL` com o email verificado do proprietário.
+   `NOX_AUTH_PUBLIC_URL` com a origem HTTPS do NoX Auth. O email/conta autorizada
+   é gerido apenas no NoX Auth existente; não é repetido nesta app.
 3. Confirma os nomes dos volumes partilhados do NoX Auth.
 4. Arranca com o override de autenticação:
 
@@ -35,13 +35,16 @@ da app, `/auth`, `/api`, `/media` e `/mcp` para o mesmo serviço. Não registes 
 strings da callback OAuth nos logs do proxy. O registo recusa alterar silenciosamente
 as origens já guardadas.
 
-Abre `/admin`, escolhe **NoX Login** e usa a conta configurada. O primeiro login
-verificado desse email associa o papel de proprietário à identidade estável
-`(issuer, subject)`. A associação não depende de futuros nomes ou alterações de email.
+Abre `/admin`, escolhe **NoX Login** e usa a conta Google autorizada no Auth.
+Tal como no Backend, uma nova identidade verificada e admitida como administrador
+pelo NoX Auth recebe acesso de proprietário automaticamente, sem uma segunda
+lista de emails ou atribuição manual. A associação usa `(issuer, subject)` e não
+depende de futuros nomes ou alterações de email.
 
-As restantes contas admitidas pelo NoX Auth aparecem sem acesso depois do primeiro
-login. Um proprietário pode atribuir papéis em **Acesso e MCP**. A autorização
-central continua obrigatória; não existe forma de admitir contas localmente no Auth.
+Os papéis locais são opcionais: um proprietário pode restringir uma conta em
+**Acesso e MCP**, e essa escolha mantém-se nos logins seguintes. A autorização
+central continua obrigatória para todos, incluindo proprietários; não existe
+forma de admitir contas localmente no Auth.
 
 ## Papéis
 

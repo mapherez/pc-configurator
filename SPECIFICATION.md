@@ -56,6 +56,9 @@ Tudo corre no host do proprietário.
 
 - Acesso público ao configurador; acesso autenticado e autorizado à gestão.
 - Integrar NoX Login e o SDK TypeScript nox-mcp através dos contratos existentes.
+- O NoX Auth existente controla as contas admitidas. Uma nova identidade de
+  administrador recebe acesso de proprietário sem repetir o email nesta app;
+  restrições locais explícitas são preservadas nos logins seguintes.
 - Gestão e MCP chamam as mesmas operações de domínio, com as mesmas validações
   e permissões. A AI não recebe acesso direto a SQL ou credenciais administrativas.
 - Gerir componentes, categorias, variantes, preços/disponibilidade por mercado,

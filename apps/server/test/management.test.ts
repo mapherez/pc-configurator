@@ -32,7 +32,14 @@ void test("login validates browser binding, state, nonce, signature, audience, a
     headers: { Cookie: begun.cookie },
   });
   assert.match(replay.headers.get("location")!, /error=login_denied/);
-  for (const flag of ["badNonce", "badAudience", "badHash", "badSignature"] as const) {
+  for (const flag of [
+    "badNonce",
+    "badAudience",
+    "badHash",
+    "badSignature",
+    "badAdmission",
+    "badEmailVerification",
+  ] as const) {
     fixture.controls[flag] = true;
     const transaction = await fixture.start();
     const result = await fetch(
@@ -123,10 +130,10 @@ void test("private API enforces authentication, origin, CSRF, roles and optimist
     email: "editor@example.test",
     google_sub: "google-editor",
   });
-  assert.equal(colleague.session.actor.role, "unassigned");
+  assert.equal(colleague.session.actor.role, "owner");
   assert.equal(
     (await fetch(`${f.base}/api/admin/state`, { headers: { Cookie: colleague.cookie } })).status,
-    403,
+    200,
   );
   f.store.database
     .prepare("UPDATE auth_principals SET role = 'editor' WHERE subject = 'editor-subject'")
@@ -168,7 +175,7 @@ void test("admission cache expires within five minutes, fails closed on outages,
 void test("MCP uses the installed NoX SDK, filters discovery, shares drafts/publication and revokes live access", async (t) => {
   const f = await authFixture(t),
     owner = await f.signIn();
-  const auth = new AdminAuth(f.store, f.login, f.owner.email);
+  const auth = new AdminAuth(f.store, f.login);
   const actor = await auth.session(digest(owner.cookie.split("=")[1]));
   const readToken = auth.createDelegation(actor, {
     name: "Read only",
@@ -242,9 +249,7 @@ void test("MCP uses the installed NoX SDK, filters discovery, shares drafts/publ
 void test("settings/locales publish explicitly, images stay private until publication, and cancellation rolls back mutations", async (t) => {
   const f = await authFixture(t),
     owner = await f.signIn();
-  const actor = await new AdminAuth(f.store, f.login, f.owner.email).session(
-    digest(owner.cookie.split("=")[1]),
-  );
+  const actor = await new AdminAuth(f.store, f.login).session(digest(owner.cookie.split("=")[1]));
   const service = new ManagementService(f.store, f.directory);
   const run = (operation: Parameters<ManagementService["execute"]>[1], input: unknown) =>
     service.execute(actor, operation, input);
@@ -310,7 +315,7 @@ void test("settings/locales publish explicitly, images stay private until public
 void test("MCP 2026 discovery cannot gain tools from untrusted metadata and expired delegations fail before execution", async (t) => {
   const f = await authFixture(t),
     owner = await f.signIn();
-  const auth = new AdminAuth(f.store, f.login, f.owner.email);
+  const auth = new AdminAuth(f.store, f.login);
   const actor = await auth.session(digest(owner.cookie.split("=")[1]));
   const token = auth.createDelegation(actor, {
     name: "Modern read",
@@ -359,9 +364,7 @@ void test("MCP 2026 discovery cannot gain tools from untrusted metadata and expi
 void test("catalogue import is atomic, creates only drafts and detects concurrent edits", async (t) => {
   const f = await authFixture(t),
     owner = await f.signIn();
-  const actor = await new AdminAuth(f.store, f.login, f.owner.email).session(
-    digest(owner.cookie.split("=")[1]),
-  );
+  const actor = await new AdminAuth(f.store, f.login).session(digest(owner.cookie.split("=")[1]));
   const service = new ManagementService(f.store, f.directory);
   const parts = f.store
     .snapshot()
@@ -389,7 +392,7 @@ void test("content backups preserve roles and audits but never restore browser o
     { default: Database } = await import("better-sqlite3");
   const f = await authFixture(t),
     owner = await f.signIn();
-  const auth = new AdminAuth(f.store, f.login, f.owner.email),
+  const auth = new AdminAuth(f.store, f.login),
     actor = await auth.session(digest(owner.cookie.split("=")[1]));
   auth.createDelegation(actor, { name: "Do not restore", scopes: ["pc:read"], hours: 1 });
   const destination = join(f.directory, "content-backup.db");
@@ -415,7 +418,7 @@ void test("content backups preserve roles and audits but never restore browser o
 void test("renewed browser login returns to its bound local path and retires previous session delegations", async (t) => {
   const f = await authFixture(t),
     first = await f.signIn();
-  const auth = new AdminAuth(f.store, f.login, f.owner.email);
+  const auth = new AdminAuth(f.store, f.login);
   const actor = await auth.session(digest(first.cookie.split("=")[1]));
   auth.createDelegation(actor, { name: "Old session", scopes: ["pc:read"], hours: 1 });
   const start = await fetch(
@@ -443,18 +446,44 @@ void test("renewed browser login returns to its bound local path and retires pre
   assert.equal(bad.status, 400);
 });
 
-void test("owner bootstrap recovers after correcting the configured email before any owner exists", async (t) => {
+void test("NoX admission grants new administrators access without local email configuration and preserves explicit role restrictions", async (t) => {
   const f = await authFixture(t);
   const identity = {
     ...f.owner,
-    sub: "future-owner",
-    email: "corrected@example.test",
-    google_sub: "google-corrected",
+    sub: "central-admin",
+    email: "admitted@gmail.com",
+    google_sub: "google-central-admin",
   };
-  assert.equal((await f.signIn(identity)).session.actor.role, "unassigned");
-  const corrected = new AdminAuth(f.store, f.login, identity.email);
-  const begun = corrected.start();
-  const completed = await corrected.complete(begun.browser, f.authorize(begun.url, identity));
-  const actor = await corrected.session(digest(completed.raw));
-  assert.equal(actor.role, "owner");
+  const first = await f.signIn(identity);
+  assert.equal(first.session.actor.role, "owner");
+  assert.equal(
+    (await fetch(`${f.base}/api/admin/state`, { headers: { Cookie: first.cookie } })).status,
+    200,
+  );
+  const owner = await f.signIn();
+  const restrict = await fetch(`${f.base}/api/admin/users`, {
+    method: "POST",
+    headers: {
+      Cookie: owner.cookie,
+      Origin: f.base,
+      "X-CSRF-Token": owner.csrf,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      issuer: f.login.config.issuer,
+      subject: identity.sub,
+      role: "unassigned",
+    }),
+  });
+  assert.equal(restrict.status, 200);
+  assert.equal(
+    (await fetch(`${f.base}/api/admin/state`, { headers: { Cookie: first.cookie } })).status,
+    403,
+  );
+  const again = await f.signIn({ ...identity, email: "renamed@gmail.com" });
+  assert.equal(again.session.actor.role, "unassigned");
+  assert.equal(
+    (await fetch(`${f.base}/api/admin/state`, { headers: { Cookie: again.cookie } })).status,
+    403,
+  );
 });

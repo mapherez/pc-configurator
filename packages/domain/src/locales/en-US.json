@@ -178,7 +178,7 @@
   "adminRole_editor": "Editor",
   "adminRole_publisher": "Publisher",
   "adminRole_owner": "Owner",
-  "adminRoleHint": "Accounts appear here after their first NoX Login. Central admission is still required.",
+  "adminRoleHint": "New administrators admitted by NoX Auth receive owner access. You can restrict their local role; this choice persists across logins and central admission is still required.",
   "adminDelegations": "AI / MCP access",
   "adminDelegationHint": "Each access is bounded by your NoX session, chosen expiry and assigned permissions. Sign-out or revocation blocks new calls.",
   "adminTokenName": "Access name",

@@ -35,6 +35,8 @@ export async function authFixture(t?: TestContext, options: { webDir?: string } 
     badAudience: false,
     badHash: false,
     badSignature: false,
+    badAdmission: false,
+    badEmailVerification: false,
   };
   const codes = new Map<string, { nonce: string; challenge: string; identity: Identity }>();
   const credentials = new Map<string, { identity: Identity; expires: number }>();
@@ -80,6 +82,8 @@ export async function authFixture(t?: TestContext, options: { webDir?: string } 
         credentials.set(access, { identity: record.identity, expires });
         const token = await new SignJWT({
           ...record.identity,
+          nox_admin: !controls.badAdmission,
+          email_verified: !controls.badEmailVerification,
           nonce: controls.badNonce ? "bad" : record.nonce,
           at_hash: controls.badHash
             ? "bad"
@@ -129,7 +133,6 @@ export async function authFixture(t?: TestContext, options: { webDir?: string } 
   const login = new NoXLogin(config, socket);
   const app = createApp(store, options.webDir, {
     login,
-    ownerEmail: "owner@example.test",
     dataDirectory: directory,
   });
   http.on("request", app);

@@ -14,9 +14,7 @@ try {
         env.NOX_AUTH_SOCKET,
       )
     : undefined;
-  if (login && !env.PC_CONFIGURATOR_OWNER_EMAIL)
-    throw new Error("PC_CONFIGURATOR_OWNER_EMAIL is required for NoX Login.");
-  const app = createApp(store, env.webDir, { login, ownerEmail: env.PC_CONFIGURATOR_OWNER_EMAIL });
+  const app = createApp(store, env.webDir, { login });
   const server = app.listen(env.PORT, env.HOST, () => {
     console.log(`PC Configurator listening on http://${env.HOST}:${env.PORT}`);
   });
