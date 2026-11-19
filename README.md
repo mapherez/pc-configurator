@@ -9,6 +9,12 @@ resumo à direita. Lê o catálogo publicado da API e calcula preços e compatib
 com o mesmo módulo do servidor. `/prototype.html` mantém os links já partilhados.
 Modelos 3D continuam para uma entrega posterior. Ver [SPECIFICATION.md](SPECIFICATION.md).
 
+A seleção é guiada pela próxima posição obrigatória, sem avançar automaticamente
+ou alterar escolhas. **Ver impacto** compara preço e verificações antes de escolher
+uma peça. Os conflitos abrem atalhos para as posições envolvidas; quantidades
+inválidas podem ser revistas no resumo. Em mobile, a navegação de categorias é
+horizontal e uma barra fixa mantém o total e a próxima ação acessíveis.
+
 ## Desenvolvimento local
 
 Requisitos: Node.js 26.13.1 ou superior da série 26 e npm 11.20.0.

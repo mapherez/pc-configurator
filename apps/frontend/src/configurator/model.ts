@@ -166,15 +166,21 @@ export function createModel(snapshot: Snapshot) {
     }).compatibility;
   const price = (part: Component, market: string, quantity = 1) =>
     priceComponent(part, market, settings, quantity);
-  const candidateConflicts = (
+  const candidateRules = (
     part: Component,
     selected: Selection,
     slot: string = part.category,
     quantities: Record<string, number> = {},
   ) =>
-    compatibility({ ...selected, [slot]: part.id }, quantities).rules.some(
-      (rule) => rule.ok === false && rule.categories.includes(part.category),
+    compatibility({ ...selected, [slot]: part.id }, quantities).rules.filter((rule) =>
+      rule.categories.includes(part.category),
     );
+  const candidateConflicts = (
+    part: Component,
+    selected: Selection,
+    slot: string = part.category,
+    quantities: Record<string, number> = {},
+  ) => candidateRules(part, selected, slot, quantities).some((rule) => rule.ok === false);
   const available = (part: Component, market: string) =>
     part.offers.some(
       (offer) =>
@@ -191,6 +197,7 @@ export function createModel(snapshot: Snapshot) {
     compatibility,
     price,
     candidateConflicts,
+    candidateRules,
     available,
   };
 }

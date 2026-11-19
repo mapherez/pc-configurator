@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Configurator, ConfiguratorWorkspace } from "./view";
 import { snapshot } from "../__tests__/snapshot";
@@ -259,4 +259,100 @@ it("repairs a quantity above one on a single-unit position and removes stale qua
   expect(JSON.parse(localStorage.getItem(storageKey)!).quantities).not.toHaveProperty("ram");
   await user.click(screen.getByRole("button", { name: "Undo" }));
   expect(new URL(window.location.href).searchParams.get("ram")).toBe("ram-ddr5-32-2x16");
+});
+
+it("guides the visitor to the next required position while keeping selection and keyboard focus explicit", async () => {
+  window.history.replaceState(null, "", "/?locale=en-US");
+  const user = userEvent.setup();
+  render(<ConfiguratorWorkspace snapshot={snapshot} />);
+  const catalog = within(screen.getByRole("region", { name: "Components" }));
+  await user.click(catalog.getByRole("button", { name: "Add Ryzen 5 7600" }));
+  expect(catalog.getByRole("heading", { name: "Processor", level: 3 })).toBeInTheDocument();
+  expect(catalog.getByText("Ryzen 5 7600 is in this position.")).toBeInTheDocument();
+  await user.click(catalog.getByRole("button", { name: "Continue to Motherboard" }));
+  await waitFor(() =>
+    expect(catalog.getByRole("heading", { name: "Motherboard", level: 3 })).toHaveFocus(),
+  );
+  expect(JSON.parse(localStorage.getItem(storageKey)!).selected).toEqual({ cpu: "cpu-7600" });
+});
+
+it("previews replacement price and conflicts without changing the build until explicitly chosen, then supports undo", async () => {
+  window.history.replaceState(null, "", "/?locale=en-US");
+  const user = userEvent.setup();
+  render(<ConfiguratorWorkspace snapshot={snapshot} />);
+  await user.click(screen.getByRole("button", { name: "Explore an example" }));
+  const saved = localStorage.getItem(storageKey),
+    href = window.location.href;
+  await user.click(screen.getByRole("button", { name: "View impact of Intel Core i5-13600K" }));
+  const dialog = within(screen.getByRole("dialog"));
+  expect(dialog.getByRole("heading", { name: "Before you choose" })).toBeInTheDocument();
+  expect(dialog.getByText(/381[,.]18/)).toBeInTheDocument();
+  expect(dialog.getByText(/111[,.]81/)).toBeInTheDocument();
+  expect(dialog.getByText("Processor and motherboard socket")).toBeInTheDocument();
+  expect(localStorage.getItem(storageKey)).toBe(saved);
+  expect(window.location.href).toBe(href);
+  await user.click(dialog.getByRole("button", { name: "Choose Intel Core i5-13600K" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(JSON.parse(localStorage.getItem(storageKey)!).selected.cpu).toBe("cpu-13600k");
+  await user.click(screen.getByRole("button", { name: "Undo" }));
+  expect(JSON.parse(localStorage.getItem(storageKey)!).selected.cpu).toBe("cpu-7600");
+});
+
+it("takes a compatibility action to the exact second memory position without altering the build", async () => {
+  window.history.replaceState(
+    null,
+    "",
+    "/?locale=en-US&motherboard=mobo-a620-itx&ram=ram-ddr5-32-2x16&ram-2=ram-ddr5-64-2x32",
+  );
+  const user = userEvent.setup();
+  render(<ConfiguratorWorkspace snapshot={snapshot} />);
+  const saved = localStorage.getItem(storageKey);
+  await user.click(screen.getByRole("button", { name: "View compatibility" }));
+  const dialog = within(screen.getByRole("dialog"));
+  const rule = within(
+    dialog.getByText("Memory modules, capacity and motherboard limits").closest("li")!,
+  );
+  await user.click(rule.getByRole("button", { name: "Review Memory · 2" }));
+  await waitFor(() =>
+    expect(screen.getByRole("heading", { name: "Memory", level: 3 })).toHaveFocus(),
+  );
+  expect(screen.getByRole("button", { name: "Memory · 2" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(localStorage.getItem(storageKey)).toBe(saved);
+});
+
+it("continues to a second required slot of the same category and offers persistent mobile summary access", async () => {
+  window.history.replaceState(null, "", "/?locale=en-US");
+  const data = structuredClone(snapshot);
+  data.settings.global.slots.find((slot) => slot.id === "ram-2")!.required = true;
+  const user = userEvent.setup();
+  render(<ConfiguratorWorkspace snapshot={data} />);
+  await user.click(screen.getByRole("button", { name: "Explore an example" }));
+  const bar = within(screen.getByRole("navigation", { name: "Next position" }));
+  await user.click(bar.getByRole("button", { name: "Continue to Memory · 2" }));
+  expect(screen.getByRole("button", { name: "Memory · 2" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await user.click(bar.getByRole("button", { name: "View summary" }));
+  await waitFor(() =>
+    expect(screen.getByRole("heading", { name: "Your configuration", level: 2 })).toHaveFocus(),
+  );
+  expect(screen.getByRole("main")).toHaveClass("area-summary");
+});
+
+it("offers a quantity repair from the checks dialog even when no physical compatibility rule fails", async () => {
+  window.history.replaceState(null, "", "/?locale=en-US&fan=fan-demo-120&qty.fan=4");
+  const user = userEvent.setup();
+  render(<ConfiguratorWorkspace snapshot={snapshot} />);
+  await user.click(screen.getByRole("button", { name: "View compatibility" }));
+  const dialog = within(screen.getByRole("dialog"));
+  const issue = within(dialog.getByText("Quantity limit for this position: 3.").closest("li")!);
+  await user.click(issue.getByRole("button", { name: "Review Fans · 1" }));
+  const quantity = screen.getByRole("combobox", { name: "Quantity of Demo Air 120 · Fans · 1" });
+  await waitFor(() => expect(quantity).toHaveFocus());
+  await user.selectOptions(quantity, "2");
+  expect(screen.queryByText("Quantity limit for this position: 3.")).not.toBeInTheDocument();
 });

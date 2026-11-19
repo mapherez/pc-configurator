@@ -24,6 +24,12 @@ Tudo corre no host do proprietário.
 - Seleção, área visual, orçamento e URL leem a mesma configuração.
 - Pesquisa por nome, SKU e marca; filtros relevantes à categoria e preços finais.
 - Selecionar ou substituir mostra impacto no orçamento e conflitos associados.
+  A pré-visualização de impacto não altera a build; a escolha é explícita e pode
+  ser desfeita. Verificações com conflito/pendentes têm atalhos para posições
+  concretas. O próximo passo aponta à posição obrigatória em falta, incluindo
+  posições repetidas da mesma categoria; não há avanço automático.
+- Em mobile, categorias têm navegação horizontal e total/próxima ação permanecem
+  acessíveis numa barra fixa. Mudanças de área e atalhos gerem foco de teclado.
 - Compatibilidade distingue conflitos, verificação incompleta e ausência de dados.
   Dados insuficientes não equivalem a uma montagem totalmente compatível.
 - Desfazer, recuperação local e links partilháveis preservam o trabalho.

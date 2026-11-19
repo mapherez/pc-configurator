@@ -68,3 +68,19 @@ describe("configurator state and shared model", () => {
     expect(restoreState({ selected: { cpu: "<script>" } }).selected).toEqual({});
   });
 });
+
+it("previews only candidate-related checks without changing the selected configuration or quantities", () => {
+  const model = createModel(snapshot);
+  const selected = { ...sample, cpu: "cpu-13600k" };
+  const quantities = { fan: 2 };
+  const before = structuredClone({ selected, quantities });
+  const ram = catalog.find((part) => part.id === "ram-ddr5-64-2x32")!;
+  const checks = model.candidateRules(ram, selected, "ram", quantities);
+  expect(checks.every((rule) => rule.categories.includes("ram"))).toBe(true);
+  expect(checks.some((rule) => rule.ok === false)).toBe(false);
+  expect({ selected, quantities }).toEqual(before);
+  const fan = catalog.find((part) => part.id === "fan-demo-140")!;
+  expect(
+    model.candidateRules(fan, { ...sample, case: "case-compact-itx" }, "fan", quantities),
+  ).toContainEqual(expect.objectContaining({ id: "fan_size", ok: false }));
+});

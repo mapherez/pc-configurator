@@ -44,7 +44,58 @@ import {
   type TextKey,
 } from "./model";
 import { fetchSnapshot } from "../lib/api";
-import { marketFeatures, type Snapshot, type Settings } from "@pc-configurator/domain";
+import { marketFeatures, type Snapshot, type Settings, type Rule } from "@pc-configurator/domain";
+
+type Position = Settings["global"]["slots"][number];
+type Translator = (key: TextKey, params?: Record<string, string | number>) => string;
+
+function RuleList({
+  rules,
+  t,
+  positions,
+  label,
+  onReview,
+}: {
+  rules: Rule[];
+  t: Translator;
+  positions: (rule: Rule) => Position[];
+  label: (id: string) => string;
+  onReview: (position: Position) => void;
+}) {
+  return (
+    <ul className="rule-list">
+      {rules.map((rule) => (
+        <li key={rule.id}>
+          <span
+            className={`rule-state ${rule.ok === false ? "failed" : rule.ok === true ? "passed" : "pending"}`}
+          >
+            {rule.ok === true ? (
+              <Check size={15} />
+            ) : rule.ok === false ? (
+              <X size={15} />
+            ) : (
+              <span>—</span>
+            )}
+          </span>
+          <div className="rule-copy">
+            <strong>{t(`rule_${rule.id}`)}</strong>
+            <small>{t(rule.ok === true ? "pass" : rule.ok === false ? "fail" : "pending")}</small>
+            {rule.ok !== true && (
+              <div className="rule-actions">
+                {positions(rule).map((position) => (
+                  <button key={position.id} onClick={() => onReview(position)}>
+                    {t("reviewPosition", { position: label(position.id) })}
+                    <ArrowUpRight size={12} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 const icons: Record<Category, LucideIcon> = {
   cpu: Cpu,
@@ -320,6 +371,7 @@ export function ConfiguratorWorkspace({
     evaluate,
     price,
     candidateConflicts,
+    candidateRules,
     available,
   } = useMemo(() => createModel(snapshot), [snapshot]);
   const categories = allCategories.filter((key) =>
@@ -356,9 +408,12 @@ export function ConfiguratorWorkspace({
   );
   const [zoom, setZoom] = useState(1);
   const [modal, setModal] = useState<"share" | "compatibility" | null>(null);
+  const [candidate, setCandidate] = useState<{ componentId: string; slot: string } | null>(null);
   const [notice, setNotice] = useState<TextKey | null>(null);
   const [storageAvailable, setStorageAvailable] = useState(initial.storageAvailable);
   const dialog = useRef<HTMLDialogElement>(null);
+  const catalogHeading = useRef<HTMLHeadingElement>(null);
+  const categoryNav = useRef<HTMLElement>(null);
   const t = (key: TextKey, params?: Record<string, string | number>) =>
     translate(state.language, key, params, snapshot.locales);
   const evaluation = useMemo(() => evaluate(state), [state, evaluate]);
@@ -392,7 +447,45 @@ export function ConfiguratorWorkspace({
   ).length;
   const next = requiredSlots.find(
     (entry) => !evaluation.lines.some((line) => line.slot === entry.id),
-  )?.category;
+  );
+  const currentPosition = settings.global.slots.find((entry) => entry.id === slot)!;
+  const currentPart = catalog.find((part) => part.id === state.selected[slot]);
+  const currentAmount = evaluation.lines.find((line) => line.slot === slot)?.amount;
+  const proposed = candidate && catalog.find((part) => part.id === candidate.componentId);
+  const proposedAmount =
+    proposed && candidate
+      ? price(proposed, state.market, state.quantities[candidate.slot] ?? 1)
+      : null;
+  const previousCandidatePart =
+    candidate && catalog.find((part) => part.id === state.selected[candidate.slot]);
+  const previousCandidateGross =
+    candidate && state.selected[candidate.slot]
+      ? evaluation.lines.find((line) => line.slot === candidate.slot)?.amount?.gross
+      : 0;
+  const proposedDelta =
+    proposedAmount && previousCandidateGross != null
+      ? proposedAmount.gross - previousCandidateGross
+      : null;
+  const proposedEvaluation =
+    proposed && candidate
+      ? evaluate({ ...state, selected: { ...state.selected, [candidate.slot]: proposed.id } })
+      : null;
+  const proposedRules =
+    proposedEvaluation && proposed
+      ? proposedEvaluation.compatibility.rules.filter((rule) =>
+          rule.categories.includes(proposed.category),
+        )
+      : null;
+  const displayedIssues = (proposedEvaluation ?? evaluation).issues.filter(
+    (issue) => issue.code !== "price_unavailable" && (!candidate || issue.slot === candidate.slot),
+  );
+  const displayedRules = proposedRules ?? checks.rules;
+  const attentionRules = displayedRules
+    .filter((rule) => rule.ok !== true)
+    .sort((a, b) => Number(a.ok === null) - Number(b.ok === null));
+  const passedRules = displayedRules.filter((rule) => rule.ok === true);
+  const failedCount = checks.rules.filter((rule) => rule.ok === false).length;
+  const pendingCount = checks.rules.filter((rule) => rule.ok === null).length;
   const positions = settings.global.slots.filter((entry) => entry.category === category);
   const slotLabel = (id: string) => {
     const entry = settings.global.slots.find((item) => item.id === id);
@@ -435,6 +528,14 @@ export function ConfiguratorWorkspace({
     else if (!modal && element.open) element.close();
   }, [modal]);
 
+  useEffect(() => {
+    const nav = categoryNav.current;
+    if (!nav || !window.matchMedia?.("(max-width: 880px)").matches) return;
+    const active = nav.querySelector<HTMLElement>("[aria-current]");
+    if (active)
+      nav.scrollTo?.({ left: active.offsetLeft - (nav.clientWidth - active.clientWidth) / 2 });
+  }, [category]);
+
   const updateState = (nextState: State) => {
     try {
       if (!preview) localStorage.setItem(storageKey, JSON.stringify(nextState));
@@ -445,13 +546,67 @@ export function ConfiguratorWorkspace({
     setState(nextState);
   };
 
-  const focusCategory = (key: Category, position?: string) => {
+  const focusCategory = (key: Category, position?: string, moveFocus = false) => {
     setSlot(position ?? settings.global.slots.find((entry) => entry.category === key)?.id ?? key);
     setCategory(key);
     setQuery("");
     setMaxPrice("");
     setCompatibleOnly(false);
     setArea("catalog");
+    if (moveFocus)
+      requestAnimationFrame(() => {
+        catalogHeading.current?.focus({ preventScroll: true });
+        document.getElementById("configurator")?.scrollIntoView?.({ block: "start" });
+      });
+  };
+  const showSummary = (position?: string) => {
+    setArea("summary");
+    requestAnimationFrame(() => {
+      const heading = document.getElementById("summary-title");
+      const quantity = position
+        ? document.querySelector<HTMLSelectElement>(`[data-quantity-slot="${position}"]`)
+        : null;
+      (quantity ?? heading)?.focus({ preventScroll: true });
+      heading?.scrollIntoView?.({ block: "start" });
+    });
+  };
+  const openChecks = (target: typeof candidate = null) => {
+    setCandidate(target);
+    setModal("compatibility");
+  };
+  const closeDialog = () => {
+    dialog.current?.close();
+    setModal(null);
+    setCandidate(null);
+  };
+  const continueBuild = () => {
+    if (next) focusCategory(next.category, next.id, true);
+    else if (checks.conflicts || checks.pending) openChecks();
+    else showSummary();
+  };
+  const continueLabel = next
+    ? t("next", {
+        category:
+          settings.global.slots.filter((position) => position.category === next.category).length > 1
+            ? slotLabel(next.id)
+            : t(next.category),
+      })
+    : t(checks.conflicts ? "reviewConflicts" : checks.pending ? "reviewChecks" : "openSummary");
+  const reviewSlots = (rule: Rule) =>
+    settings.global.slots.filter(
+      (position) =>
+        rule.categories.includes(position.category) &&
+        (state.selected[position.id] ||
+          position.required ||
+          (!settings.global.slots.some(
+            (other) => other.category === position.category && state.selected[other.id],
+          ) &&
+            settings.global.slots.find((other) => other.category === position.category)?.id ===
+              position.id)),
+    );
+  const reviewPosition = (position: Position) => {
+    closeDialog();
+    focusCategory(position.category, position.id, true);
   };
   const changeSelection = (
     selection: Selection,
@@ -639,9 +794,12 @@ export function ConfiguratorWorkspace({
               <span> / {String(categories.length).padStart(2, "0")}</span>
             </span>
           </div>
-          <nav className="category-nav" aria-label={t("catalog")}>
+          <nav ref={categoryNav} className="category-nav" aria-label={t("catalog")}>
             {categories.map((key) => {
               const Icon = icons[key];
+              const conflict = checks.rules.some(
+                (rule) => rule.ok === false && rule.categories.includes(key),
+              );
               return (
                 <button
                   key={key}
@@ -653,8 +811,8 @@ export function ConfiguratorWorkspace({
                   <span className="category-icon">
                     <Icon size={19} strokeWidth={1.5} />
                     {selected.some((part) => part.category === key) && (
-                      <span className="category-selected">
-                        <Check size={8} />
+                      <span className={`category-selected ${conflict ? "has-conflict" : ""}`}>
+                        {conflict ? <TriangleAlert size={8} /> : <Check size={8} />}
                       </span>
                     )}
                   </span>
@@ -676,6 +834,24 @@ export function ConfiguratorWorkspace({
               ))}
             </div>
           )}
+          <div
+            className="selection-context"
+            role="region"
+            aria-label={t("choosePosition", { position: slotLabel(slot) })}
+          >
+            <div>
+              <span className="selection-caption">
+                {t(currentPosition.required ? "positionRequired" : "positionOptional")} ·{" "}
+                {slotLabel(slot)}
+              </span>
+              <p className="selection-current" aria-live="polite">
+                {currentPart
+                  ? t("positionSelected", { name: currentPart.name })
+                  : t("choosePositionHint")}
+              </p>
+            </div>
+            {currentPart && <strong>{money(currentAmount?.gross)}</strong>}
+          </div>
           <div className="catalog-filters">
             <label className="search-field">
               <Search size={16} aria-hidden="true" />
@@ -716,7 +892,9 @@ export function ConfiguratorWorkspace({
           </div>
           <div className="catalog-heading">
             <div>
-              <h3>{t(category)}</h3>
+              <h3 ref={catalogHeading} tabIndex={-1}>
+                {t(category)}
+              </h3>
               <span>{t("results", { count: visible.length })}</span>
             </div>
             <span className="currency-note">{markets[state.market].currency}</span>
@@ -724,7 +902,9 @@ export function ConfiguratorWorkspace({
           <div className="parts-list">
             {visible.map((part) => {
               const isSelected = state.selected[slot] === part.id;
-              const conflict = candidateConflicts(part, state.selected, slot, state.quantities);
+              const conflicts = candidateRules(part, state.selected, slot, state.quantities).filter(
+                (rule) => rule.ok === false,
+              );
               const partPrice = price(part, state.market, state.quantities[slot] ?? 1);
               const image = part.images.find(
                 (value) =>
@@ -767,22 +947,24 @@ export function ConfiguratorWorkspace({
                   </div>
                   <div className="spec-tags">
                     {Object.entries(part.specs)
-                      .filter(([key]) =>
-                        [
-                          "socket",
-                          "ram_type",
-                          "form_factor",
-                          "type",
-                          "size_gb",
-                          "wattage",
-                          "length_mm",
-                          "efficiency",
-                          "interface",
-                          "connector",
-                          "height_mm",
-                          "diameter_mm",
-                          "sockets",
-                        ].includes(key),
+                      .filter(
+                        ([key]) =>
+                          [
+                            "socket",
+                            "ram_type",
+                            "form_factor",
+                            "type",
+                            "size_gb",
+                            "wattage",
+                            "length_mm",
+                            "efficiency",
+                            "interface",
+                            "connector",
+                            "height_mm",
+                            "diameter_mm",
+                            "sockets",
+                          ].includes(key) &&
+                          !(key === "connector" && part.specs.connector === part.specs.interface),
                       )
                       .slice(0, 3)
                       .map(([key, value]) => (
@@ -799,10 +981,15 @@ export function ConfiguratorWorkspace({
                         </span>
                       ))}
                   </div>
-                  {conflict && (
+                  {conflicts.length > 0 && (
                     <div className="card-conflict">
                       <TriangleAlert size={12} />
-                      {t("conflict")}
+                      <span>
+                        {conflicts
+                          .slice(0, 2)
+                          .map((rule) => t(`rule_${rule.id}`))
+                          .join(" · ")}
+                      </span>
                     </div>
                   )}
                   <div className="part-card-bottom">
@@ -826,9 +1013,21 @@ export function ConfiguratorWorkspace({
                   </div>
                   {!isSelected && delta != null && (
                     <div className="price-delta">
-                      {t("delta", { amount: `${delta >= 0 ? "+" : "−"}${money(Math.abs(delta))}` })}
+                      {delta === 0
+                        ? t("samePrice")
+                        : t("delta", {
+                            amount: `${delta > 0 ? "+" : "−"}${money(Math.abs(delta))}`,
+                          })}
                     </div>
                   )}
+                  <button
+                    className="inspect-button"
+                    aria-label={t("inspectCompatibility", { name: part.name })}
+                    onClick={() => openChecks({ componentId: part.id, slot })}
+                  >
+                    {t("inspectLabel")}
+                    <ArrowUpRight size={12} />
+                  </button>
                 </article>
               );
             })}
@@ -856,6 +1055,15 @@ export function ConfiguratorWorkspace({
                 </button>
               </div>
             )}
+          </div>
+          <div className="catalog-continue">
+            <span>
+              {t("buildProgressShort", { count: completed, total: requiredSlots.length })}
+            </span>
+            <button onClick={continueBuild}>
+              {continueLabel}
+              <ArrowRight size={14} />
+            </button>
           </div>
         </section>
 
@@ -898,7 +1106,7 @@ export function ConfiguratorWorkspace({
                   <button
                     key={id}
                     className={`stage-slot slot-${key} ${evaluation.lines.some((line) => line.slot === id) ? "filled" : ""} ${slot === id ? "focused" : ""}`}
-                    onClick={() => focusCategory(key, id)}
+                    onClick={() => focusCategory(key, id, true)}
                     aria-label={t("selectCategory", { category: t(key) })}
                     title={t(key)}
                   >
@@ -926,7 +1134,7 @@ export function ConfiguratorWorkspace({
                 return (
                   <button
                     key={entry.id}
-                    onClick={() => focusCategory(entry.category, entry.id)}
+                    onClick={() => focusCategory(entry.category, entry.id, true)}
                     aria-label={t("selectCategory", { category: slotLabel(entry.id) })}
                   >
                     <Icon size={14} />
@@ -964,7 +1172,7 @@ export function ConfiguratorWorkspace({
           </div>
           <button
             className={`compatibility-strip ${checks.conflicts ? "has-conflicts" : checks.pending ? "has-pending" : ""}`}
-            onClick={() => setModal("compatibility")}
+            onClick={() => openChecks()}
             aria-label={t("checkDetails")}
           >
             <span className="compatibility-icon">
@@ -972,7 +1180,15 @@ export function ConfiguratorWorkspace({
             </span>
             <span>
               <strong>{t(status)}</strong>
-              <small>{t(checks.pending ? "checksPending" : "compatibilityHint")}</small>
+              <small>
+                {failedCount
+                  ? t("conflictsSummary", { count: failedCount })
+                  : checks.pending
+                    ? pendingCount
+                      ? t("pendingSummary", { count: pendingCount })
+                      : t("checksPending")
+                    : t("checksSummary")}
+              </small>
             </span>
             <ArrowUpRight size={17} />
           </button>
@@ -980,7 +1196,9 @@ export function ConfiguratorWorkspace({
 
         <aside className="summary-panel panel" aria-labelledby="summary-title">
           <div className="panel-top">
-            <h2 id="summary-title">{t("summary")}</h2>
+            <h2 id="summary-title" tabIndex={-1}>
+              {t("summary")}
+            </h2>
             <button
               className="icon-button"
               disabled={!Object.keys(state.selected).length}
@@ -1029,7 +1247,7 @@ export function ConfiguratorWorkspace({
                   >
                     <button
                       className="summary-part-link"
-                      onClick={() => focusCategory(key, position)}
+                      onClick={() => focusCategory(key, position, true)}
                       aria-label={t("selectCategory", { category: slotLabel(position) })}
                     >
                       <span className="summary-part-icon">
@@ -1070,6 +1288,7 @@ export function ConfiguratorWorkspace({
                               position: slotLabel(position),
                             })}
                             value={state.quantities[position] ?? 1}
+                            data-quantity-slot={position}
                             onChange={(event) =>
                               changeSelection(state.selected, "changed", {
                                 ...state.quantities,
@@ -1130,7 +1349,12 @@ export function ConfiguratorWorkspace({
             {!budget && (
               <p className="market-notice">
                 <Globe2 size={15} />
-                {t("marketUnavailable")}
+                {t(
+                  evaluation.issues.some((issue) => issue.code === "price_unavailable") ||
+                    taxBasisPoints === null
+                    ? "marketUnavailable"
+                    : "invalidBuildTotal",
+                )}
               </p>
             )}
             <dl className="price-breakdown">
@@ -1165,15 +1389,9 @@ export function ConfiguratorWorkspace({
               {t("share")}
               <ArrowUpRight size={17} />
             </button>
-            <button
-              className="next-button"
-              onClick={() => {
-                if (next) focusCategory(next);
-              }}
-              disabled={!next}
-            >
-              {next ? t("next", { category: t(next) }) : t("complete")}
-              {next && <ArrowRight size={14} />}
+            <button className="next-button" onClick={continueBuild}>
+              {continueLabel}
+              <ArrowRight size={14} />
             </button>
           </div>
         </aside>
@@ -1190,69 +1408,209 @@ export function ConfiguratorWorkspace({
         <span>{t("app")}</span>
       </footer>
 
+      <nav className="mobile-build-bar" aria-label={t("nextPosition")}>
+        <button
+          className="mobile-total"
+          onClick={() => showSummary()}
+          aria-label={t("openSummary")}
+        >
+          <span>{t("total")}</span>
+          <strong>{money(budget?.gross)}</strong>
+          <small>
+            {t("buildProgressShort", { count: completed, total: requiredSlots.length })}
+          </small>
+        </button>
+        <button className="mobile-continue" onClick={continueBuild}>
+          {continueLabel}
+          <ArrowRight size={15} />
+        </button>
+      </nav>
+
       <dialog
         ref={dialog}
         className="workspace-dialog"
         aria-labelledby="dialog-title"
-        onCancel={() => setModal(null)}
+        onCancel={() => {
+          setModal(null);
+          setCandidate(null);
+        }}
       >
-        <div className="dialog-top">
-          <span className="eyebrow">{t(modal === "share" ? "share" : "checkDetails")}</span>
-          <button className="icon-button" onClick={() => setModal(null)} aria-label={t("close")}>
-            <X size={18} />
-          </button>
-        </div>
-        <h2 id="dialog-title">{t(modal === "share" ? "shareTitle" : status)}</h2>
-        {modal === "share" ? (
+        {modal && (
           <>
-            <p>{t("shareHint")}</p>
-            <input
-              className="share-url"
-              aria-label={t("share")}
-              hidden={preview}
-              readOnly
-              value={link}
-              onFocus={(event) => event.currentTarget.select()}
-            />
-            <button
-              className="primary-button"
-              onClick={() => {
-                void copyLink();
-              }}
-            >
-              <Copy size={16} />
-              {t("copy")}
-            </button>
-            <p className="dialog-notice" role="status">
-              {notice && t(notice)}
-            </p>
-          </>
-        ) : (
-          <>
-            <p>{t("compatibilityHint")}</p>
-            <ul className="rule-list">
-              {checks.rules.map((rule) => (
-                <li key={rule.id}>
-                  <span
-                    className={`rule-state ${rule.ok === false ? "failed" : rule.ok === true ? "passed" : "pending"}`}
+            <div className="dialog-top">
+              <span className="eyebrow">{t(modal === "share" ? "share" : "checkDetails")}</span>
+              <button className="icon-button" onClick={closeDialog} aria-label={t("close")}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="dialog-body">
+              <h2 id="dialog-title">
+                {t(modal === "share" ? "shareTitle" : proposed ? "candidateTitle" : status)}
+              </h2>
+              {modal === "share" ? (
+                <>
+                  <p>{t("shareHint")}</p>
+                  <input
+                    className="share-url"
+                    aria-label={t("share")}
+                    hidden={preview}
+                    readOnly
+                    value={link}
+                    onFocus={(event) => event.currentTarget.select()}
+                  />
+                  <button
+                    className="primary-button"
+                    onClick={() => {
+                      void copyLink();
+                    }}
                   >
-                    {rule.ok === true ? (
-                      <Check size={15} />
-                    ) : rule.ok === false ? (
-                      <X size={15} />
-                    ) : (
-                      <span>—</span>
-                    )}
-                  </span>
-                  <span>
-                    <strong>{t(`rule_${rule.id}`)}</strong>
-                    <small>
-                      {t(rule.ok === true ? "pass" : rule.ok === false ? "fail" : "pending")}
-                    </small>
-                  </span>
-                </li>
-              ))}
-            </ul>
+                    <Copy size={16} />
+                    {t("copy")}
+                  </button>
+                  <p className="dialog-notice" role="status">
+                    {notice && t(notice)}
+                  </p>
+                </>
+              ) : (
+                <>
+                  {proposed && candidate && (
+                    <div className="candidate-preview">
+                      <h3>{proposed.name}</h3>
+                      <p>
+                        {t("candidateHint", {
+                          name: proposed.name,
+                          position: slotLabel(candidate.slot),
+                        })}
+                      </p>
+                      <dl className="candidate-prices">
+                        <div>
+                          <dt>
+                            {t("currentPrice")}
+                            {previousCandidatePart && <small>{previousCandidatePart.name}</small>}
+                          </dt>
+                          <dd>
+                            {state.selected[candidate.slot]
+                              ? money(
+                                  evaluation.lines.find((line) => line.slot === candidate.slot)
+                                    ?.amount?.gross,
+                                )
+                              : t("emptySlot")}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>{t("candidatePrice")}</dt>
+                          <dd>{money(proposedAmount?.gross)}</dd>
+                        </div>
+                        <div>
+                          <dt>{t("priceDifference")}</dt>
+                          <dd>
+                            {proposedDelta === null
+                              ? "—"
+                              : proposedDelta === 0
+                                ? t("samePrice")
+                                : `${proposedDelta > 0 ? "+" : "−"}${money(Math.abs(proposedDelta))}`}
+                          </dd>
+                        </div>
+                      </dl>
+                    </div>
+                  )}
+                  <p>{t("compatibilityHint")}</p>
+                  {!candidate && evaluation.missingRequiredSlots.length > 0 && (
+                    <div className="missing-positions">
+                      <h3>{t("missingPositions")}</h3>
+                      <div className="rule-actions">
+                        {evaluation.missingRequiredSlots.map((id) => (
+                          <button
+                            key={id}
+                            onClick={() =>
+                              reviewPosition(
+                                settings.global.slots.find((position) => position.id === id)!,
+                              )
+                            }
+                          >
+                            {t("reviewPosition", { position: slotLabel(id) })}
+                            <ArrowRight size={12} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {displayedIssues.length > 0 && (
+                    <ul className="check-issues">
+                      {displayedIssues.map((issue) => {
+                        const position = settings.global.slots.find(
+                          (position) => position.id === issue.slot,
+                        );
+                        return (
+                          <li key={issue.slot}>
+                            <strong>{slotLabel(issue.slot)}</strong>
+                            <p>
+                              {issue.code !== "price_unavailable" &&
+                                t(`issue_${issue.code}`, { max: position?.maxQuantity ?? 1 })}
+                            </p>
+                            <button
+                              onClick={() => {
+                                if (position && issue.code !== "invalid_quantity")
+                                  reviewPosition(position);
+                                else {
+                                  closeDialog();
+                                  showSummary(issue.slot);
+                                }
+                              }}
+                            >
+                              {t("reviewPosition", { position: slotLabel(issue.slot) })}
+                              <ArrowRight size={12} />
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  <p className="check-counts" role="status">
+                    {t("checkCounts", {
+                      conflicts: displayedRules.filter((rule) => rule.ok === false).length,
+                      pending: displayedRules.filter((rule) => rule.ok === null).length,
+                    })}
+                  </p>
+                  <RuleList
+                    rules={attentionRules}
+                    t={t}
+                    positions={reviewSlots}
+                    label={slotLabel}
+                    onReview={reviewPosition}
+                  />
+                  {passedRules.length > 0 && (
+                    <details className="verified-checks">
+                      <summary>
+                        <Check size={15} />
+                        {t("verifiedCount", { count: passedRules.length })}
+                        <ChevronDown size={14} />
+                      </summary>
+                      <RuleList
+                        rules={passedRules}
+                        t={t}
+                        positions={reviewSlots}
+                        label={slotLabel}
+                        onReview={reviewPosition}
+                      />
+                    </details>
+                  )}
+                  {proposed && candidate && (
+                    <button
+                      className="primary-button candidate-apply"
+                      disabled={state.selected[candidate.slot] === proposed.id}
+                      onClick={() => {
+                        changeSelection({ ...state.selected, [candidate.slot]: proposed.id });
+                        closeDialog();
+                      }}
+                    >
+                      {t("candidateApply", { name: proposed.name })}
+                      <ArrowRight size={15} />
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </>
         )}
       </dialog>
