@@ -88,7 +88,7 @@ function PartGlyph({ category }: { category: Category }) {
   );
 }
 
-function AssemblyDrawing({ selected }: { selected: Selection }) {
+function AssemblyDrawing({ selected, fanCount }: { selected: Selection; fanCount: number }) {
   const board = Boolean(selected.motherboard),
     cpu = Boolean(selected.cpu);
   const ram = Boolean(selected.ram),
@@ -172,12 +172,30 @@ function AssemblyDrawing({ selected }: { selected: Selection }) {
           <rect x="190" y="177" width="23" height="23" fill="#535d61" rx="2" />
         </g>
       )}
+      {selected.cooler && (
+        <g className="installed-part">
+          <rect x="155" y="145" width="90" height="91" rx="5" fill="#667578" stroke="#bfcbc7" />
+          <path
+            d="M161 154h78m-78 10h78m-78 10h78m-78 10h78m-78 10h78m-78 10h78m-78 10h78m-78 10h78"
+            stroke="#263b3d"
+            strokeWidth="3"
+          />
+          <circle cx="200" cy="190" r="24" fill="#263b3d" stroke="#abc0a4" />
+          <circle cx="200" cy="190" r="7" fill="#95aea0" />
+        </g>
+      )}
       <g className={ram ? "installed-part" : ""} opacity={ram ? 1 : 0.27}>
         <rect x="254" y="140" width="10" height="112" rx="2" fill="#a4bfa5" />
         <rect x="272" y="140" width="10" height="112" rx="2" fill="#a4bfa5" />
         <path d="M256 149v91m18-91v91" stroke="#223b31" strokeWidth="4" />
       </g>
       <path d="M121 275h168m-168 25h168m-168 25h168" stroke="#111a1c" strokeWidth="8" />
+      {selected.storage && (
+        <g className="installed-part">
+          <rect x="151" y="250" width="74" height="12" rx="2" fill="#8da398" />
+          <path d="M161 253v6m12-6v6m12-6v6m12-6v6m12-6v6" stroke="#253b35" strokeWidth="5" />
+        </g>
+      )}
       {gpu && (
         <g className="installed-part">
           <rect
@@ -208,8 +226,12 @@ function AssemblyDrawing({ selected }: { selected: Selection }) {
         </g>
       )}
       <rect x="308" y="94" width="18" height="273" rx="2" fill="url(#case-mesh)" />
-      {[139, 230, 321].map((y) => (
-        <g key={y}>
+      {[139, 230, 321].map((y, index) => (
+        <g
+          key={y}
+          className={index < fanCount ? "installed-part" : ""}
+          opacity={index < fanCount ? 1 : 0.2}
+        >
           <circle cx="363" cy={y} r="28" fill="#141a20" stroke="#53616b" strokeWidth="1.2" />
           <circle cx="363" cy={y} r="20" fill="none" stroke="#9eb9a2" opacity=".8" />
           <circle cx="363" cy={y} r="7" fill="#44525a" />
@@ -339,8 +361,14 @@ export function ConfiguratorWorkspace({
   const dialog = useRef<HTMLDialogElement>(null);
   const t = (key: TextKey, params?: Record<string, string | number>) =>
     translate(state.language, key, params, snapshot.locales);
-  const selected = useMemo(() => selectedParts(state.selected), [state.selected, selectedParts]);
   const evaluation = useMemo(() => evaluate(state), [state, evaluate]);
+  const selected = useMemo(
+    () =>
+      selectedParts(
+        Object.fromEntries(evaluation.lines.map((line) => [line.slot, line.componentId])),
+      ),
+    [evaluation.lines, selectedParts],
+  );
   const checks = evaluation.compatibility;
   const budget = evaluation.total;
   const taxBasisPoints = markets[state.market].taxBasisPoints;
@@ -450,8 +478,10 @@ export function ConfiguratorWorkspace({
   };
   const remove = (key: string) => {
     const updated = { ...state.selected };
+    const quantities = { ...state.quantities };
     delete updated[key];
-    changeSelection(updated);
+    delete quantities[key];
+    changeSelection(updated, "changed", quantities);
   };
   const copyLink = async () => {
     try {
@@ -622,7 +652,7 @@ export function ConfiguratorWorkspace({
                 >
                   <span className="category-icon">
                     <Icon size={19} strokeWidth={1.5} />
-                    {state.selected[key] && (
+                    {selected.some((part) => part.category === key) && (
                       <span className="category-selected">
                         <Check size={8} />
                       </span>
@@ -747,6 +777,11 @@ export function ConfiguratorWorkspace({
                           "wattage",
                           "length_mm",
                           "efficiency",
+                          "interface",
+                          "connector",
+                          "height_mm",
+                          "diameter_mm",
+                          "sockets",
                         ].includes(key),
                       )
                       .slice(0, 3)
@@ -756,9 +791,11 @@ export function ConfiguratorWorkspace({
                             ? t("gigabytes", { value: String(value) })
                             : key === "wattage"
                               ? t("watts", { value: String(value) })
-                              : key === "length_mm"
+                              : ["length_mm", "height_mm", "diameter_mm"].includes(key)
                                 ? t("millimetres", { value: String(value) })
-                                : String(value)}
+                                : key === "sockets" && Array.isArray(value)
+                                  ? t("specSockets", { value: value.join(" / ") })
+                                  : String(value)}
                         </span>
                       ))}
                   </div>
@@ -847,17 +884,31 @@ export function ConfiguratorWorkspace({
             <div className="assembly-object" style={{ transform: `scale(${zoom})` }}>
               <AssemblyDrawing
                 selected={Object.fromEntries(selected.map((part) => [part.category, part.id]))}
+                fanCount={evaluation.lines.reduce(
+                  (sum, line) =>
+                    sum +
+                    (catalog.find((part) => part.id === line.componentId)?.category === "fan"
+                      ? line.quantity
+                      : 0),
+                  0,
+                )}
               />
               <div className="stage-slots">
                 {requiredSlots.map(({ category: key, id }) => (
                   <button
                     key={id}
-                    className={`stage-slot slot-${key} ${state.selected[key] ? "filled" : ""} ${category === key ? "focused" : ""}`}
-                    onClick={() => focusCategory(key)}
+                    className={`stage-slot slot-${key} ${evaluation.lines.some((line) => line.slot === id) ? "filled" : ""} ${slot === id ? "focused" : ""}`}
+                    onClick={() => focusCategory(key, id)}
                     aria-label={t("selectCategory", { category: t(key) })}
                     title={t(key)}
                   >
-                    <span>{state.selected[key] ? <Check size={10} /> : <Plus size={11} />}</span>
+                    <span>
+                      {evaluation.lines.some((line) => line.slot === id) ? (
+                        <Check size={10} />
+                      ) : (
+                        <Plus size={11} />
+                      )}
+                    </span>
                     <span className="slot-tooltip">{t(key)}</span>
                   </button>
                 ))}
@@ -866,7 +917,10 @@ export function ConfiguratorWorkspace({
           </div>
           <div className="stage-extra-parts">
             {settings.global.slots
-              .filter((entry) => !entry.required && state.selected[entry.id])
+              .filter(
+                (entry) =>
+                  !entry.required && evaluation.lines.some((line) => line.slot === entry.id),
+              )
               .map((entry) => {
                 const Icon = icons[entry.category];
                 return (
@@ -964,9 +1018,15 @@ export function ConfiguratorWorkspace({
               .filter((entry) => entry.required || state.selected[entry.id])
               .map(({ id: position, category: key, maxQuantity }) => {
                 const part = catalog.find((item) => item.id === state.selected[position]);
+                const issue = evaluation.issues.find(
+                  (item) => item.slot === position && item.code !== "price_unavailable",
+                );
                 const Icon = icons[key];
                 return (
-                  <div key={position} className={`summary-part ${part ? "has-part" : ""}`}>
+                  <div
+                    key={position}
+                    className={`summary-part ${part ? "has-part" : ""} ${issue ? "has-issue" : ""}`}
+                  >
                     <button
                       className="summary-part-link"
                       onClick={() => focusCategory(key, position)}
@@ -986,38 +1046,50 @@ export function ConfiguratorWorkspace({
                         {part && (
                           <span className="summary-line-price">
                             {money(
-                              price(part, state.market, state.quantities[position] ?? 1)?.gross,
+                              evaluation.lines.find((line) => line.slot === position)?.amount
+                                ?.gross,
                             )}
+                          </span>
+                        )}
+                        {issue && issue.code !== "price_unavailable" && (
+                          <span className="summary-line-issue">
+                            {t(`issue_${issue.code}`, { max: maxQuantity })}
                           </span>
                         )}
                       </span>
                     </button>
-                    {part && maxQuantity > 1 && (
-                      <label className="quantity-field">
-                        <span className="sr-only">
-                          {t("quantity", { name: part.name, position: slotLabel(position) })}
-                        </span>
-                        <select
-                          aria-label={t("quantity", {
-                            name: part.name,
-                            position: slotLabel(position),
-                          })}
-                          value={state.quantities[position] ?? 1}
-                          onChange={(event) =>
-                            changeSelection(state.selected, "changed", {
-                              ...state.quantities,
-                              [position]: Number(event.target.value),
-                            })
-                          }
-                        >
-                          {Array.from({ length: maxQuantity }, (_, index) => (
-                            <option key={index + 1} value={index + 1}>
-                              {index + 1}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    )}
+                    {part &&
+                      (maxQuantity > 1 || (state.quantities[position] ?? 1) > maxQuantity) && (
+                        <label className="quantity-field">
+                          <span className="sr-only">
+                            {t("quantity", { name: part.name, position: slotLabel(position) })}
+                          </span>
+                          <select
+                            aria-label={t("quantity", {
+                              name: part.name,
+                              position: slotLabel(position),
+                            })}
+                            value={state.quantities[position] ?? 1}
+                            onChange={(event) =>
+                              changeSelection(state.selected, "changed", {
+                                ...state.quantities,
+                                [position]: Number(event.target.value),
+                              })
+                            }
+                          >
+                            {(state.quantities[position] ?? 1) > maxQuantity && (
+                              <option value={state.quantities[position]} disabled>
+                                {t("invalidQuantity", { count: state.quantities[position] })}
+                              </option>
+                            )}
+                            {Array.from({ length: maxQuantity }, (_, index) => (
+                              <option key={index + 1} value={index + 1}>
+                                {index + 1}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      )}
                     {state.selected[position] ? (
                       <button
                         className="remove-part"
@@ -1052,6 +1124,9 @@ export function ConfiguratorWorkspace({
                 </strong>
               </div>
             </div>
+            <p className="power-note">
+              {t("powerAllowance", { value: settings.global.systemPowerAllowanceWatts })}
+            </p>
             {!budget && (
               <p className="market-notice">
                 <Globe2 size={15} />

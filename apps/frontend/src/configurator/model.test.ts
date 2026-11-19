@@ -39,7 +39,7 @@ describe("configurator state and shared model", () => {
   });
   it("does not call an incomplete specification compatible and filters only candidate-related conflicts", () => {
     expect(compatibility({ cpu: "cpu-7600" })).toMatchObject({ conflicts: false, pending: true });
-    expect(compatibility(sample)).toMatchObject({ conflicts: false, pending: true });
+    expect(compatibility(sample)).toMatchObject({ conflicts: false, pending: false });
     const conflicting = { ...sample, cpu: "cpu-13600k" };
     expect(compatibility(conflicting).conflicts).toBe(true);
     expect(

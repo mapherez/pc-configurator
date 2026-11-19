@@ -44,7 +44,7 @@ async function serve(t: TestContext, store: CatalogStore, webDir?: string) {
 
 void test("first start creates the catalogue atomically; restarts preserve additions, edits and deletions", (t) => {
   const { file, store } = fixture(t);
-  assert.equal(store.listParts().length, 14);
+  assert.equal(store.listParts().length, 24);
   store.createPart(component);
   store.close();
   const edit = new Database(file);
@@ -58,7 +58,7 @@ void test("first start creates the catalogue atomically; restarts preserve addit
   const reopened = new CatalogStore(file);
   t.after(() => reopened.close());
   const parts = reopened.listParts();
-  assert.equal(parts.length, 14);
+  assert.equal(parts.length, 24);
   assert.equal(parts.find((part) => part.slug === component.id)?.price, "123.45");
   assert.equal(parts.find((part) => part.slug === "cpu-7600")?.price, "1.01");
   assert.ok(!parts.some((part) => part.slug === "cpu-13600k"));
@@ -73,11 +73,11 @@ void test("invalid prices and duplicate slugs cannot partially write categories"
   }
   store.createPart(component);
   assert.throws(() => store.createPart({ ...component, category: "fan" }));
-  assert.equal(store.listParts().length, 15);
+  assert.equal(store.listParts().length, 25);
   const db = new Database(file, { readonly: true });
   assert.equal(
     db.prepare("SELECT count(*) AS n FROM catalog_categories WHERE name = 'fan'").pluck().get(),
-    0,
+    1,
   );
   db.close();
 });
@@ -105,7 +105,7 @@ void test("real HTTP API reads SQLite, blocks public writes and reports database
   assert.deepEqual(await (await fetch(`${base}/health`)).json(), { ok: true });
   const response = await fetch(`${base}/api/parts`);
   const parts = (await response.json()) as { price: string; category: { name: string } }[];
-  assert.equal(parts.length, 14);
+  assert.equal(parts.length, 24);
   assert.equal(parts[0].price, "399.99");
   assert.equal(parts[0].category.name, "cpu");
   assert.equal(response.headers.get("access-control-allow-origin"), null);
@@ -160,7 +160,7 @@ void test("public snapshot exposes published components only and quote matches t
   store.createPart({ ...component, id: "archived-cpu", status: "archived" });
   const base = await serve(t, store);
   const snapshot = SnapshotSchema.parse(await (await fetch(`${base}/api/configurator`)).json());
-  assert.equal(snapshot.components.length, 14);
+  assert.equal(snapshot.components.length, 25);
   assert.ok(snapshot.components.every((entry: { status: string }) => entry.status === "published"));
   const build = {
     version: 1 as const,
@@ -209,13 +209,15 @@ void test("published market settings persist without overwriting independent def
   const { store, file } = fixture(t);
   store.publishSettings({
     markets: { pt: { taxBasisPoints: 600 }, us: { taxBasisPoints: null } },
-    global: { features: { exampleBuild: false } },
+    global: { features: { exampleBuild: false }, systemPowerAllowanceWatts: 200 },
   });
+  store.publishSettings({ global: { defaultLanguage: "en-US" } });
   assert.throws(() => store.publishSettings({ markets: { pt: { taxBasisPoints: -1 } } }));
   store.close();
   const reopened = new CatalogStore(file);
   t.after(() => reopened.close());
   const snapshot = reopened.snapshot();
+  assert.equal(snapshot.settings.global.systemPowerAllowanceWatts, 200);
   assert.equal(snapshot.settings.markets.pt.taxBasisPoints, 600);
   assert.equal(snapshot.settings.markets.us.taxBasisPoints, null);
   assert.equal(snapshot.settings.global.features.exampleBuild, false);
@@ -242,4 +244,59 @@ void test("existing local catalogues retain edited prices and removals when thei
   assert.equal(store.snapshot().components[0].id, "my-custom-cpu");
   assert.equal(store.snapshot().components[0].offers[0].netMinor, 12345);
   assert.equal(store.listParts()[0].id, 20);
+});
+
+void test("demo catalogue builds a complete compact PC and the public quote checks shared connector and fan limits", async (t) => {
+  const { store } = fixture(t);
+  const base = await serve(t, store);
+  const snapshot = SnapshotSchema.parse(await (await fetch(`${base}/api/configurator`)).json());
+  assert.equal(new Set(snapshot.components.map((part) => part.category)).size, 9);
+  const chosen = {
+    cpu: "cpu-7600",
+    motherboard: "mobo-a620-itx",
+    ram: "ram-ddr5-32-2x16",
+    gpu: "gpu-rtx4070s",
+    psu: "psu-demo-sfx-650",
+    case: "case-compact-itx",
+    storage: "ssd-demo-nvme-1tb",
+    cooler: "cooler-demo-low-65",
+    fan: "fan-demo-120",
+  };
+  const build = {
+    version: 1 as const,
+    market: "pt",
+    language: "en-US" as const,
+    lines: Object.entries(chosen).map(([slot, componentId]) => ({
+      slot,
+      componentId,
+      quantity: slot === "fan" ? 2 : 1,
+    })),
+  };
+  const quote = async (input: typeof build) => {
+    const response = await fetch(`${base}/api/quote`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    assert.equal(response.status, 200);
+    return (await response.json()) as ReturnType<typeof evaluateBuild>;
+  };
+  const valid = await quote(build);
+  assert.equal(valid.complete, true);
+  assert.deepEqual(valid.issues, []);
+  assert.equal(valid.compatibility.conflicts, false);
+  assert.equal(valid.compatibility.pending, false);
+  assert.ok(valid.total);
+  const conflict = await quote({
+    ...build,
+    lines: [
+      ...build.lines.map((line) => (line.slot === "fan" ? { ...line, quantity: 3 } : line)),
+      { slot: "storage-2", componentId: "ssd-demo-nvme-2tb", quantity: 1 },
+    ],
+  });
+  assert.equal(
+    conflict.compatibility.rules.find((rule) => rule.id === "storage_capacity")?.ok,
+    false,
+  );
+  assert.equal(conflict.compatibility.rules.find((rule) => rule.id === "fan_capacity")?.ok, false);
 });

@@ -27,7 +27,7 @@ npm run dev:frontend
 O alias `npm run dev:prototype` abre a mesma app. O Vite encaminha `/api` para
 `127.0.0.1:3001`, independentemente da porta escolhida para o frontend. Não é
 necessário configurar um URL de API ou credenciais de BD. O primeiro arranque do
-servidor cria `apps/server/data/catalog.db` e os 14 componentes de exemplo.
+servidor cria `apps/server/data/catalog.db` e os 25 componentes de exemplo.
 
 ## Correr no teu host
 
@@ -116,11 +116,18 @@ inicial de 23%. US tem moeda própria mas ainda não tem preços/imposto configu
 a app não converte nem reutiliza preços de Portugal. Idioma e mercado são escolhas
 independentes. Há posições múltiplas para memória, armazenamento e ventoinhas,
 quantidades por posição e códigos de compatibilidade traduzidos pelo locale ativo.
-Dados insuficientes aparecem como verificação pendente.
+Dados insuficientes aparecem como verificação pendente. O exemplo inclui as nove
+categorias; armazenamento e cooler são posições obrigatórias, ventoinhas são opcionais.
+O SSD `ssd-demo-unverified` não tem interface/conector de propósito, e a ventoinha
+RGB tem oferta indisponível, para testar estes estados sem dados comerciais reais.
+
+Uma BD existente mantém o seu catálogo. Para experimentar os novos exemplos nessa
+BD, importa os JSON de `apps/server/catalog` pela gestão e revê/publica os rascunhos.
+A importação não publica automaticamente nem substitui silenciosamente dados no arranque.
 
 Os JSON e a ordem de aplicação estão documentados em [SETTINGS.md](SETTINGS.md).
 A gestão privada e MCP permitem guardar, pré-visualizar, publicar e arquivar estes
-dados, com papéis e auditoria. É necessário configurar o NoX Login no host. Os 14 componentes atuais continuam a ser exemplos, sem garantia de
+dados, com papéis e auditoria. É necessário configurar o NoX Login no host. Os 25 componentes iniciais continuam a ser exemplos, sem garantia de
 preços ou disponibilidade comerciais atuais.
 
 ## Validação e release

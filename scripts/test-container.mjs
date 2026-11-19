@@ -71,7 +71,7 @@ try {
   docker("volume", "create", volume);
   volumeCreated = true;
   let base = await start();
-  assert.equal(await count(base), 14);
+  assert.equal(await count(base), 24);
   for (const path of ["/", "/prototype.html"]) {
     const response = await fetch(base + path);
     assert.equal(response.status, 200);
@@ -82,7 +82,7 @@ try {
     }
   }
   const published = await (await fetch(`${base}/api/configurator`)).json();
-  assert.equal(published.components.length, 14);
+  assert.equal(published.components.length, 25);
   assert.equal(published.settings.markets.pt.taxBasisPoints, 2300);
   const quote = await fetch(`${base}/api/quote`, {
     method: "POST",
@@ -114,10 +114,10 @@ try {
   docker("exec", name, "node", "dist/src/backup.js", "/data/check-backup.db");
   docker("restart", "--timeout", "15", name);
   base = await ready();
-  assert.equal(await count(base), 15);
+  assert.equal(await count(base), 25);
   stop();
   base = await start();
-  assert.equal(await count(base), 15, "data survives replacement of the container");
+  assert.equal(await count(base), 25, "data survives replacement of the container");
   stop();
   docker(
     "run",

@@ -182,3 +182,81 @@ it("shows an attached managed image even when an old seed image path is still pr
     "/media/asset-test",
   );
 });
+
+it("loads a full example with storage and cooling and completes every applicable compatibility check", async () => {
+  const user = userEvent.setup();
+  render(<ConfiguratorWorkspace snapshot={snapshot} />);
+  await user.click(screen.getByRole("button", { name: "Explorar um exemplo" }));
+  expect(screen.getByText("8 de 8 posições obrigatórias")).toBeInTheDocument();
+  const summary = within(screen.getByRole("complementary"));
+  expect(summary.getByText("Demo NVMe 1TB")).toBeInTheDocument();
+  expect(summary.getByText("Demo Tower 155")).toBeInTheDocument();
+  expect(summary.getByText("Demo Air 120")).toBeInTheDocument();
+  expect(
+    within(screen.getByRole("button", { name: "Ver compatibilidade" })).getByText(
+      "Sem conflitos detetados",
+    ),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText("Inclui 100 W de reserva para os restantes componentes."),
+  ).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Ver compatibilidade" }));
+  const dialog = within(screen.getByRole("dialog"));
+  expect(dialog.getAllByText("Verificado")).toHaveLength(13);
+  expect(dialog.queryByText("Requer atenção")).not.toBeInTheDocument();
+});
+
+it("filters SSD conflicts by the selected position without concealing unverified specifications", async () => {
+  window.history.replaceState(null, "", "/?locale=en-US");
+  const user = userEvent.setup();
+  render(<ConfiguratorWorkspace snapshot={snapshot} />);
+  await user.click(screen.getByRole("button", { name: "Explore an example" }));
+  await user.click(screen.getAllByRole("button", { name: "Choose Motherboard" })[0]);
+  await user.click(screen.getByRole("button", { name: "Replace A620I Edge" }));
+  await user.click(screen.getAllByRole("button", { name: "Choose Storage" })[0]);
+  await user.click(screen.getByRole("button", { name: "Storage · 2" }));
+  await user.click(screen.getByRole("checkbox", { name: "Hide known conflicts" }));
+  expect(screen.queryByRole("article", { name: "Demo NVMe 2TB" })).not.toBeInTheDocument();
+  expect(screen.getByRole("article", { name: "Demo SATA 2TB" })).toBeInTheDocument();
+  expect(screen.getByRole("article", { name: "Demo SSD 1TB" })).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Add Demo SATA 2TB" }));
+  expect(
+    within(screen.getByRole("button", { name: "View compatibility" })).getByText(
+      "No conflicts detected",
+    ),
+  ).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Replace Demo SSD 1TB" }));
+  expect(
+    within(screen.getByRole("button", { name: "View compatibility" })).getByText(
+      "Verification incomplete",
+    ),
+  ).toBeInTheDocument();
+});
+
+it("explains and repairs an excessive quantity restored from a shared link", async () => {
+  window.history.replaceState(null, "", "/?locale=en-US&fan=fan-demo-120&qty.fan=4");
+  const user = userEvent.setup();
+  render(<ConfiguratorWorkspace snapshot={snapshot} />);
+  expect(screen.getByText("Quantity limit for this position: 3.")).toBeInTheDocument();
+  const quantity = screen.getByRole("combobox", { name: "Quantity of Demo Air 120 · Fans · 1" });
+  expect(quantity).toHaveValue("4");
+  await user.selectOptions(quantity, "3");
+  expect(screen.queryByText("Quantity limit for this position: 3.")).not.toBeInTheDocument();
+  expect(new URL(window.location.href).searchParams.get("qty.fan")).toBe("3");
+});
+
+it("repairs a quantity above one on a single-unit position and removes stale quantities with their component", async () => {
+  window.history.replaceState(null, "", "/?locale=en-US&ram=ram-ddr5-32-2x16&qty.ram=2");
+  const user = userEvent.setup();
+  render(<ConfiguratorWorkspace snapshot={snapshot} />);
+  expect(screen.getByText("Quantity limit for this position: 1.")).toBeInTheDocument();
+  await user.selectOptions(
+    screen.getByRole("combobox", { name: "Quantity of DDR5 32GB (2x16) 6000MHz · Memory · 1" }),
+    "1",
+  );
+  expect(screen.queryByText("Quantity limit for this position: 1.")).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Remove DDR5 32GB (2x16) 6000MHz" }));
+  expect(JSON.parse(localStorage.getItem(storageKey)!).quantities).not.toHaveProperty("ram");
+  await user.click(screen.getByRole("button", { name: "Undo" }));
+  expect(new URL(window.location.href).searchParams.get("ram")).toBe("ram-ddr5-32-2x16");
+});

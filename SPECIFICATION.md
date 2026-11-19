@@ -27,8 +27,9 @@ Tudo corre no host do proprietário.
 - Compatibilidade distingue conflitos, verificação incompleta e ausência de dados.
   Dados insuficientes não equivalem a uma montagem totalmente compatível.
 - Desfazer, recuperação local e links partilháveis preservam o trabalho.
-- Quantidades, variantes e posições de montagem são requisitos do modelo final;
-  o protótipo inicial limita-se às seis categorias do catálogo existente.
+- Quantidades, variantes e posições de montagem fazem parte do domínio partilhado.
+  O catálogo demonstrativo cobre as nove categorias; armazenamento e cooler são
+  obrigatórios por defeito, ventoinhas são opcionais. Estes limites vêm das settings.
 - UI nova, responsiva e acessível: foco visível, teclado, toque, estados vazios,
   erros recuperáveis e preferência de movimento reduzido.
 

@@ -7,7 +7,8 @@ Express ou SQLite. A gestão e o SDK MCP usam as mesmas operações.
 ## Organização
 
 - `packages/domain/src/settings/default.json`: defaults de mercado/idioma,
-  funcionalidades, posições de montagem, limites de quantidade e margem da fonte.
+  funcionalidades, posições de montagem, limites de quantidade, reserva de potência
+  do sistema e margem da fonte.
 - `packages/domain/src/settings/markets/*.json`: moeda, precisão monetária e taxa
   de imposto por mercado; funcionalidades opcionais podem sobrepor os defaults.
 - `packages/domain/src/locales/*.json`: todos os textos da interface e regras.
@@ -63,6 +64,48 @@ Regras devolvem identificadores e `true`, `false` ou `null`. Falta de seleção 
 de dados técnicos é pendente; nunca passa como compatibilidade confirmada. A UI
 traduz os identificadores pelo idioma ativo. As regras atuais são básicas; novos
 dados/interfaces/conectores podem exigir regras adicionais antes de compra real.
+Sem ventoinhas selecionadas não há verificações de ventoinhas pendentes. O mesmo
+aplica-se a armazenamento/cooler quando as settings os tornam opcionais.
+`complete` indica que todas as posições obrigatórias têm linhas válidas;
+`missingRequiredSlots` lista as posições em falta. Não certifica compatibilidade
+nem disponibilidade comercial. O filtro da UI oculta conflitos conhecidos;
+não elimina peças apenas por faltar informação técnica.
+
+### Campos técnicos usados pelas regras
+
+Campos ausentes significam dados desconhecidos. Contagens aceitam zero para
+representar ausência confirmada de encaixes; não se usa zero como campo em falta.
+Módulos, capacidades em GB, diâmetros e contagens são inteiros.
+
+| Categoria   | Campos                                                                                                                                                |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CPU         | `socket`, `tdp` em W                                                                                                                                  |
+| Motherboard | `socket`, `ram_type`, `form_factor`, `ram_slots`, `max_ram_gb`, `storage_slots`, `m2_slots`, `sata_ports`, `storage_interfaces`, `storage_connectors` |
+| RAM         | `type`, `sticks` por kit, `size_gb` por kit                                                                                                           |
+| GPU         | `length_mm`, `tdp` em W                                                                                                                               |
+| Fonte       | `wattage`, `form_factor`                                                                                                                              |
+| Caixa       | `mobo_support`, `max_gpu_length_mm`, `max_cpu_cooler_height_mm`, `psu_support`, `fan_slots`, `fan_sizes_mm`, `fan_mounts_120`, `fan_mounts_140`       |
+| SSD         | `size_gb`, `interface` (`NVMe`/`SATA`), `connector` (`M.2`/`SATA`), `form_factor` descritivo                                                          |
+| Cooler a ar | `sockets`, `height_mm`                                                                                                                                |
+| Ventoinha   | `diameter_mm`                                                                                                                                         |
+
+RAM soma módulos e GB de todos os kits/quantidades. Armazenamento verifica o total,
+portas de cada conector e interfaces suportadas. Ventoinhas somam quantidades entre
+posições e respeitam o total e o máximo por diâmetro; esses limites não descrevem
+cada localização individual na caixa. Formatos de fonte e alturas de coolers são
+verificados separadamente do socket. Um conflito comprovado prevalece mesmo que
+outra comparação da mesma regra não tenha dados.
+
+A potência estimada soma CPU + GPU + `systemPowerAllowanceWatts` (100 W por defeito),
+uma reserva fixa para motherboard, RAM, discos, ventoinhas e outros consumos.
+Aplica-se depois `psuHeadroomBasisPoints` (5000 = 50%) e arredonda-se para cima em
+passos de 50 W. É uma estimativa configurável, não uma medição nem uma garantia de
+potência térmica do cooler.
+
+As verificações ainda não modelam BIOS, partilha de lanes/portas, espaço ocupado
+por radiadores, comprimentos de SSDs M.2, baias SATA da caixa, altura da RAM junto ao cooler, espessura da
+GPU ou conectores elétricos. Os exemplos não devem ser usados para validar uma
+compra real sem confirmar os fabricantes. Os dados comerciais continuam demonstrativos.
 
 ## API pública
 

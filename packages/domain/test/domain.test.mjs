@@ -32,14 +32,28 @@ const board = component("board-test", "motherboard", {
   ram_type: "DDR5",
   form_factor: "ATX",
   ram_slots: 4,
+  max_ram_gb: 128,
+  m2_slots: 2,
+  sata_ports: 0,
+  storage_interfaces: ["NVMe"],
+  storage_connectors: ["M.2"],
   storage_slots: 2,
 });
-const ram = component("ram-test", "ram", { type: "DDR5", sticks: 2 });
+const ram = component("ram-test", "ram", { type: "DDR5", sticks: 2, size_gb: 32 });
 const gpu = component("gpu-test", "gpu", { tdp: 200, length_mm: 300 });
-const enclosure = component("case-test", "case", { mobo_support: ["ATX"], max_gpu_length_mm: 350 });
-const psu = component("psu-test", "psu", { wattage: 750 });
-const cooler = component("cooler-test", "cooler", { sockets: ["AM5"] });
-const storage = component("storage-test", "storage");
+const enclosure = component("case-test", "case", {
+  mobo_support: ["ATX"],
+  max_gpu_length_mm: 350,
+  max_cpu_cooler_height_mm: 160,
+  psu_support: ["ATX"],
+  fan_slots: 4,
+  fan_sizes_mm: [120, 140],
+  fan_mounts_120: 4,
+  fan_mounts_140: 2,
+});
+const psu = component("psu-test", "psu", { wattage: 750, form_factor: "ATX" });
+const cooler = component("cooler-test", "cooler", { sockets: ["AM5"], height_mm: 155 });
+const storage = component("storage-test", "storage", { connector: "M.2", interface: "NVMe" });
 const parts = [cpu, board, ram, gpu, enclosure, psu, cooler, storage];
 const build = (lines = [], market = "pt") => ({ version: 1, market, language: "pt-PT", lines });
 const line = (slot, part, quantity = 1) => ({ slot, componentId: part.id, quantity });
@@ -219,5 +233,176 @@ void test("management prices parse exact decimals and locale publication preserv
   assert.equal(
     translate("en-US", "title", {}, { "en-US": { title: "Published title" } }),
     "Published title",
+  );
+});
+
+const fullLines = [
+  line("cpu", cpu),
+  line("motherboard", board),
+  line("ram", ram),
+  line("gpu", gpu),
+  line("case", enclosure),
+  line("psu", psu),
+  line("cooler", cooler),
+  line("storage", storage),
+];
+const ruleValue = (result, id) => result.compatibility.rules.find((rule) => rule.id === id)?.ok;
+const withSpecs = (part, specs) =>
+  ComponentSchema.parse({ ...part, specs: { ...part.specs, ...specs } });
+const checkParts = (replacements = [], extras = [], settings = defaultSettings) =>
+  evaluateBuild(
+    build([...fullLines, ...extras]),
+    [
+      ...parts.filter((part) => !replacements.some((replacement) => replacement.id === part.id)),
+      ...replacements,
+    ],
+    settings,
+  );
+
+void test("SSD limits apply per connector across positions and distinguish absent ports from missing data", () => {
+  const restricted = withSpecs(board, { m2_slots: 1, storage_slots: 3 });
+  assert.equal(
+    ruleValue(checkParts([restricted], [line("storage-2", storage)]), "storage_capacity"),
+    false,
+  );
+  const sata = component("sata-test", "storage", { interface: "SATA", connector: "SATA" });
+  const hybrid = withSpecs(restricted, {
+    sata_ports: 1,
+    storage_interfaces: ["NVMe", "SATA"],
+    storage_connectors: ["M.2", "SATA"],
+  });
+  const valid = checkParts([hybrid, sata], [line("storage-2", sata)]);
+  assert.equal(ruleValue(valid, "storage_capacity"), true);
+  assert.equal(ruleValue(valid, "storage_interface"), true);
+  const noSata = checkParts([sata], [line("storage-2", sata)]);
+  assert.equal(ruleValue(noSata, "storage_capacity"), false);
+  assert.equal(ruleValue(noSata, "storage_interface"), false);
+  const unknown = { ...hybrid, specs: { ...hybrid.specs } };
+  delete unknown.specs.sata_ports;
+  assert.equal(
+    ruleValue(checkParts([unknown, sata], [line("storage-2", sata)]), "storage_capacity"),
+    null,
+  );
+  const unverified = { ...storage, specs: {} };
+  const incomplete = checkParts([unverified]);
+  assert.equal(ruleValue(incomplete, "storage_interface"), null);
+  assert.equal(ruleValue(incomplete, "storage_capacity"), null);
+  assert.equal(incomplete.compatibility.pending, true);
+});
+
+void test("memory capacity counts gigabytes as well as modules and proven conflicts win over missing data", () => {
+  const twoKits = [line("ram-2", ram)];
+  assert.equal(ruleValue(checkParts([], twoKits), "ram_capacity"), true);
+  assert.equal(
+    ruleValue(checkParts([withSpecs(board, { max_ram_gb: 32 })], twoKits), "ram_capacity"),
+    false,
+  );
+  const incomplete = { ...ram, specs: { type: "DDR5", sticks: 2 } };
+  assert.equal(ruleValue(checkParts([incomplete]), "ram_capacity"), null);
+  assert.equal(
+    ruleValue(checkParts([incomplete, withSpecs(board, { ram_slots: 1 })]), "ram_capacity"),
+    false,
+  );
+});
+
+void test("cooler socket and height and PSU form factor are independent physical checks", () => {
+  assert.equal(
+    ruleValue(checkParts([withSpecs(cooler, { height_mm: 160 })]), "cooler_clearance"),
+    true,
+  );
+  assert.equal(
+    ruleValue(checkParts([withSpecs(cooler, { height_mm: 161 })]), "cooler_clearance"),
+    false,
+  );
+  assert.equal(
+    ruleValue(checkParts([withSpecs(cooler, { sockets: ["LGA1700"] })]), "cooler"),
+    false,
+  );
+  assert.equal(ruleValue(checkParts([withSpecs(psu, { form_factor: "SFX" })]), "psu_case"), false);
+  const unknown = { ...cooler, specs: { sockets: ["AM5"] } };
+  assert.equal(ruleValue(checkParts([unknown]), "cooler_clearance"), null);
+});
+
+void test("optional fans do not block a build; selected fans consume shared and size-specific mounts", () => {
+  assert.equal(checkParts().compatibility.pending, false);
+  assert.ok(!checkParts().compatibility.rules.some((rule) => rule.id === "fan_size"));
+  const fan120 = component("fan-120", "fan", { diameter_mm: 120 });
+  const fan140 = component("fan-140", "fan", { diameter_mm: 140 });
+  const valid = checkParts([fan120], [line("fan", fan120, 3)]);
+  assert.equal(ruleValue(valid, "fan_capacity"), true);
+  assert.equal(ruleValue(valid, "fan_size"), true);
+  assert.equal(ruleValue(checkParts([fan140], [line("fan", fan140, 3)]), "fan_capacity"), false);
+  const combined = checkParts([fan120, fan140], [line("fan", fan120, 3), line("fan-2", fan140, 2)]);
+  assert.equal(ruleValue(combined, "fan_capacity"), false);
+  const blocked = withSpecs(enclosure, { fan_mounts_120: 0 });
+  assert.equal(
+    ruleValue(checkParts([blocked, fan120], [line("fan", fan120)]), "fan_capacity"),
+    false,
+  );
+  const unsupported = withSpecs(fan120, { diameter_mm: 200 });
+  assert.equal(ruleValue(checkParts([unsupported], [line("fan", unsupported)]), "fan_size"), false);
+  const unknown = { ...fan120, specs: {} };
+  const missing = checkParts([unknown], [line("fan", unknown)]);
+  assert.equal(ruleValue(missing, "fan_size"), null);
+  assert.equal(ruleValue(missing, "fan_capacity"), null);
+});
+
+void test("required storage and cooling remain incomplete until selected; explicitly optional empty positions have no checks", () => {
+  const base = fullLines.filter((line) => !["storage", "cooler"].includes(line.slot));
+  const incomplete = evaluateBuild(build(base), parts, defaultSettings);
+  assert.equal(incomplete.complete, false);
+  assert.deepEqual(incomplete.missingRequiredSlots, ["storage", "cooler"]);
+  assert.equal(incomplete.compatibility.pending, true);
+  const optional = resolveSettings({
+    global: {
+      slots: defaultSettings.global.slots.map((slot) =>
+        ["storage", "cooler"].includes(slot.category) ? { ...slot, required: false } : slot,
+      ),
+    },
+  });
+  const complete = evaluateBuild(build(base), parts, optional);
+  assert.equal(complete.complete, true);
+  assert.equal(complete.compatibility.pending, false);
+  assert.ok(
+    !complete.compatibility.rules.some(
+      (rule) => rule.id.startsWith("cooler") || rule.id.startsWith("storage"),
+    ),
+  );
+});
+
+void test("PSU estimate includes the configured system allowance before headroom and rounding", () => {
+  const normal = checkParts();
+  assert.equal(normal.compatibility.tdp, 365);
+  assert.equal(normal.compatibility.recommended, 550);
+  const settings = resolveSettings({
+    global: { systemPowerAllowanceWatts: 200, psuHeadroomBasisPoints: 0 },
+  });
+  const larger = checkParts([], [], settings);
+  assert.equal(larger.compatibility.tdp, 465);
+  assert.equal(larger.compatibility.recommended, 500);
+  assert.equal(
+    ruleValue(checkParts([withSpecs(psu, { wattage: 499 })], [], settings), "psu"),
+    false,
+  );
+});
+
+void test("technical contracts reject malformed counts, dimensions and support lists while preserving unknown fields", () => {
+  for (const specs of [
+    { ram_slots: 1.5 },
+    { fan_slots: -1 },
+    { fan_mounts_120: "2" },
+    { sticks: 1.5 },
+    { size_gb: 1.1 },
+    { height_mm: 0 },
+    { sockets: [true] },
+    { interface: 3 },
+    { fan_sizes_mm: ["120"] },
+  ])
+    assert.throws(() => ComponentSchema.parse({ ...board, specs }));
+  assert.doesNotThrow(() =>
+    ComponentSchema.parse({
+      ...board,
+      specs: { m2_slots: 0, sata_ports: 0, sockets: [], future_attribute: "example" },
+    }),
   );
 });

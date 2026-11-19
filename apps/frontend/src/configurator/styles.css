@@ -779,6 +779,29 @@ button:disabled {
   left: 76%;
   top: 17%;
 }
+.slot-storage {
+  left: 42%;
+  top: 47%;
+}
+.slot-cooler {
+  left: 48%;
+  top: 39%;
+}
+.power-note {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+.summary-line-issue {
+  color: #a64236;
+  display: block;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.summary-part.has-issue {
+  background: #fff2ed;
+}
 .installed-part {
   animation: install-part 0.35s ease-out;
 }

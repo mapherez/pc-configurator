@@ -35,6 +35,9 @@ export const sample: Selection = {
   gpu: "gpu-rtx4070s",
   psu: "psu-750-gold",
   case: "case-mesh-atx",
+  storage: "ssd-demo-nvme-1tb",
+  cooler: "cooler-demo-tower-155",
+  fan: "fan-demo-120",
 };
 export function toBuild(state: State): Build {
   return {

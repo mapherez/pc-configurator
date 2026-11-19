@@ -1,0 +1,91 @@
+[
+  {
+    "id": "ssd-demo-nvme-1tb",
+    "sku": "SSD-DEMO-NVME-1TB",
+    "name": "Demo NVMe 1TB",
+    "brand": "Demo",
+    "category": "storage",
+    "status": "published",
+    "images": [],
+    "specs": {
+      "size_gb": 1000,
+      "interface": "NVMe",
+      "connector": "M.2",
+      "form_factor": "M.2 2280"
+    },
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 6500,
+        "available": true
+      }
+    ]
+  },
+  {
+    "id": "ssd-demo-nvme-2tb",
+    "sku": "SSD-DEMO-NVME-2TB",
+    "name": "Demo NVMe 2TB",
+    "brand": "Demo",
+    "category": "storage",
+    "status": "published",
+    "images": [],
+    "specs": {
+      "size_gb": 2000,
+      "interface": "NVMe",
+      "connector": "M.2",
+      "form_factor": "M.2 2280"
+    },
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 11500,
+        "available": true
+      }
+    ]
+  },
+  {
+    "id": "ssd-demo-sata-2tb",
+    "sku": "SSD-DEMO-SATA-2TB",
+    "name": "Demo SATA 2TB",
+    "brand": "Demo",
+    "category": "storage",
+    "status": "published",
+    "images": [],
+    "specs": {
+      "size_gb": 2000,
+      "interface": "SATA",
+      "connector": "SATA",
+      "form_factor": "2.5"
+    },
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 9500,
+        "available": true
+      }
+    ]
+  },
+  {
+    "id": "ssd-demo-unverified",
+    "sku": "SSD-DEMO-UNVERIFIED",
+    "name": "Demo SSD 1TB",
+    "brand": "Demo",
+    "category": "storage",
+    "status": "published",
+    "images": [],
+    "specs": {
+      "size_gb": 1000
+    },
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 5500,
+        "available": true
+      }
+    ]
+  }
+]

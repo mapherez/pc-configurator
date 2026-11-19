@@ -9,7 +9,14 @@
     "specs": {
       "socket": "AM5",
       "ram_type": "DDR5",
-      "form_factor": "ATX"
+      "form_factor": "ATX",
+      "ram_slots": 4,
+      "max_ram_gb": 192,
+      "storage_slots": 6,
+      "m2_slots": 2,
+      "sata_ports": 4,
+      "storage_interfaces": ["NVMe", "SATA"],
+      "storage_connectors": ["M.2", "SATA"]
     },
     "status": "published",
     "offers": [
@@ -31,7 +38,14 @@
     "specs": {
       "socket": "LGA1700",
       "ram_type": "DDR5",
-      "form_factor": "mATX"
+      "form_factor": "mATX",
+      "ram_slots": 4,
+      "max_ram_gb": 128,
+      "storage_slots": 6,
+      "m2_slots": 2,
+      "sata_ports": 4,
+      "storage_interfaces": ["NVMe", "SATA"],
+      "storage_connectors": ["M.2", "SATA"]
     },
     "status": "published",
     "offers": [
@@ -53,7 +67,14 @@
     "specs": {
       "socket": "AM5",
       "ram_type": "DDR5",
-      "form_factor": "ITX"
+      "form_factor": "ITX",
+      "ram_slots": 2,
+      "max_ram_gb": 64,
+      "storage_slots": 3,
+      "m2_slots": 1,
+      "sata_ports": 2,
+      "storage_interfaces": ["NVMe", "SATA"],
+      "storage_connectors": ["M.2", "SATA"]
     },
     "status": "published",
     "offers": [

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "cooler-demo-tower-155",
+    "sku": "COOLER-DEMO-TOWER-155",
+    "name": "Demo Tower 155",
+    "brand": "Demo",
+    "category": "cooler",
+    "status": "published",
+    "images": [],
+    "specs": {
+      "sockets": ["AM5", "LGA1700"],
+      "height_mm": 155
+    },
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 4500,
+        "available": true
+      }
+    ]
+  },
+  {
+    "id": "cooler-demo-low-65",
+    "sku": "COOLER-DEMO-LOW-65",
+    "name": "Demo Low Profile 65",
+    "brand": "Demo",
+    "category": "cooler",
+    "status": "published",
+    "images": [],
+    "specs": {
+      "sockets": ["AM5"],
+      "height_mm": 65
+    },
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 3500,
+        "available": true
+      }
+    ]
+  },
+  {
+    "id": "cooler-demo-tower-175",
+    "sku": "COOLER-DEMO-TOWER-175",
+    "name": "Demo Tower 175",
+    "brand": "Demo",
+    "category": "cooler",
+    "status": "published",
+    "images": [],
+    "specs": {
+      "sockets": ["LGA1700"],
+      "height_mm": 175
+    },
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 7500,
+        "available": true
+      }
+    ]
+  }
+]

@@ -8,7 +8,8 @@
     "images": ["/images/psu/750-gold.png"],
     "specs": {
       "wattage": 750,
-      "efficiency": "80+ Gold"
+      "efficiency": "80+ Gold",
+      "form_factor": "ATX"
     },
     "status": "published",
     "offers": [
@@ -29,7 +30,8 @@
     "images": ["/images/psu/850-gold.png"],
     "specs": {
       "wattage": 850,
-      "efficiency": "80+ Gold"
+      "efficiency": "80+ Gold",
+      "form_factor": "ATX"
     },
     "status": "published",
     "offers": [
@@ -37,6 +39,28 @@
         "market": "pt",
         "currency": "EUR",
         "netMinor": 13900,
+        "available": true
+      }
+    ]
+  },
+  {
+    "id": "psu-demo-sfx-650",
+    "sku": "PSU-DEMO-SFX-650",
+    "name": "Demo SFX 650W",
+    "brand": "Demo",
+    "category": "psu",
+    "status": "published",
+    "images": [],
+    "specs": {
+      "wattage": 650,
+      "form_factor": "SFX",
+      "efficiency": "80+ Gold"
+    },
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 10500,
         "available": true
       }
     ]

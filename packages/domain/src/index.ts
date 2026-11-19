@@ -54,22 +54,47 @@ export const ComponentSchema = z
     if (new Set(part.offers.map((offer) => offer.market)).size !== part.offers.length) {
       ctx.addIssue({ code: "custom", path: ["offers"], message: "duplicate_market_offer" });
     }
+    const positive = [
+      "tdp",
+      "length_mm",
+      "max_gpu_length_mm",
+      "wattage",
+      "size_gb",
+      "sticks",
+      "max_ram_gb",
+      "height_mm",
+      "max_cpu_cooler_height_mm",
+      "diameter_mm",
+    ];
+    const counts = ["ram_slots", "storage_slots", "m2_slots", "sata_ports", "fan_slots"];
+    const integers = ["size_gb", "sticks", "max_ram_gb", "diameter_mm"];
+    const texts = ["socket", "ram_type", "form_factor", "type", "interface", "connector"];
+    const lists = [
+      "mobo_support",
+      "sockets",
+      "storage_interfaces",
+      "storage_connectors",
+      "psu_support",
+    ];
     for (const [key, value] of Object.entries(part.specs)) {
-      if (
-        [
-          "tdp",
-          "length_mm",
-          "max_gpu_length_mm",
-          "wattage",
-          "size_gb",
-          "sticks",
-          "ram_slots",
-          "storage_slots",
-        ].includes(key) &&
-        (typeof value !== "number" || value <= 0 || !Number.isFinite(value))
-      ) {
+      const count = counts.includes(key) || /^fan_mounts_\d+$/.test(key);
+      const invalid =
+        ((positive.includes(key) || count) &&
+          (typeof value !== "number" ||
+            !Number.isFinite(value) ||
+            (count ? value < 0 : value <= 0) ||
+            ((count || integers.includes(key)) && !Number.isSafeInteger(value)))) ||
+        (texts.includes(key) && (typeof value !== "string" || !value.trim())) ||
+        (lists.includes(key) &&
+          (!Array.isArray(value) ||
+            !value.every((item) => typeof item === "string" && item.trim()))) ||
+        (key === "fan_sizes_mm" &&
+          (!Array.isArray(value) ||
+            !value.every(
+              (item) => typeof item === "number" && Number.isSafeInteger(item) && item > 0,
+            )));
+      if (invalid)
         ctx.addIssue({ code: "custom", path: ["specs", key], message: "invalid_specification" });
-      }
     }
   });
 export type Component = z.output<typeof ComponentSchema>;
@@ -85,6 +110,7 @@ export const SlotSchema = z
 const FeaturesSchema = z
   .object({ priceFilter: z.boolean(), compatibilityFilter: z.boolean(), exampleBuild: z.boolean() })
   .strict();
+const PowerAllowanceSchema = z.number().int().min(0).max(2000);
 const GlobalSchema = z
   .object({
     defaultMarket: Identifier,
@@ -92,6 +118,7 @@ const GlobalSchema = z
     languages: z.array(LanguageSchema).min(1),
     features: FeaturesSchema,
     psuHeadroomBasisPoints: z.number().int().min(0).max(20000),
+    systemPowerAllowanceWatts: PowerAllowanceSchema.default(100),
     slots: z.array(SlotSchema).min(1).max(64),
   })
   .strict();
@@ -126,7 +153,10 @@ export function marketFeatures(settings: Settings, market: string) {
 export const SettingsPatchSchema = z
   .object({
     global: GlobalSchema.partial()
-      .extend({ features: FeaturesSchema.partial().optional() })
+      .extend({
+        features: FeaturesSchema.partial().optional(),
+        systemPowerAllowanceWatts: PowerAllowanceSchema.optional(),
+      })
       .optional(),
     markets: z.record(Identifier, MarketSchema.partial()).optional(),
   })
@@ -214,55 +244,118 @@ export type RuleId =
   | "gpu"
   | "case"
   | "psu"
+  | "psu_case"
   | "ram_capacity"
   | "storage_capacity"
-  | "cooler";
+  | "storage_interface"
+  | "cooler"
+  | "cooler_clearance"
+  | "fan_size"
+  | "fan_capacity";
 export type Rule = { id: RuleId; ok: boolean | null; categories: readonly Category[] };
 export type ResolvedLine = BuildLine & { component: Component };
-function numberSpec(part: Component | undefined, key: string): number | null {
+function numberSpec(part: Component | undefined, key: string, allowZero = false): number | null {
   const value = part?.specs[key];
-  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
+  return typeof value === "number" && Number.isFinite(value) && (allowZero ? value >= 0 : value > 0)
+    ? value
+    : null;
 }
 function textSpec(part: Component | undefined, key: string): string | null {
   const value = part?.specs[key];
   return typeof value === "string" && value.trim() ? value : null;
 }
+function textListSpec(part: Component | undefined, key: string): string[] | null {
+  const value = part?.specs[key];
+  return Array.isArray(value) && value.every((item) => typeof item === "string" && item.trim())
+    ? (value as string[])
+    : null;
+}
+// A proven conflict wins even when other checks lack data.
+function allChecks(checks: (boolean | null)[]): boolean | null {
+  return checks.includes(false)
+    ? false
+    : checks.length && checks.every((check) => check === true)
+      ? true
+      : null;
+}
+const atMost = (value: number | null, limit: number | null) =>
+  value !== null && limit !== null ? value <= limit : null;
+const supports = (values: readonly (string | number)[] | null, value: string | number | null) =>
+  values !== null && value !== null ? values.includes(value) : null;
 export function compatibility(lines: ResolvedLine[], settings: Settings) {
   const of = (category: Category) => lines.filter((line) => line.component.category === category);
   const first = (category: Category) => of(category)[0]?.component;
+  const active = (category: Category) =>
+    of(category).length > 0 ||
+    settings.global.slots.some((slot) => slot.category === category && slot.required);
   const cpu = first("cpu"),
     board = first("motherboard"),
     gpu = first("gpu"),
     enclosure = first("case"),
     psu = first("psu");
-  const compare = (a: string | number | null, b: string | number | null) =>
+  const compare = (a: string | null, b: string | null) =>
     a !== null && b !== null ? a === b : null;
-  const supported = enclosure?.specs.mobo_support;
-  const form = textSpec(board, "form_factor");
-  const gpuLength = numberSpec(gpu, "length_mm"),
-    clearance = numberSpec(enclosure, "max_gpu_length_mm");
   const cpuPower = numberSpec(cpu, "tdp"),
     gpuPower = numberSpec(gpu, "tdp"),
     watts = numberSpec(psu, "wattage");
-  const tdp = cpuPower !== null && gpuPower !== null ? cpuPower + gpuPower : null;
+  // Configurable system allowance covers the remaining parts; this is an estimate, not a measurement.
+  const tdp =
+    cpuPower !== null && gpuPower !== null
+      ? cpuPower + gpuPower + settings.global.systemPowerAllowanceWatts
+      : null;
   const recommended =
     tdp === null
       ? null
       : Math.ceil((tdp * (1 + settings.global.psuHeadroomBasisPoints / 10000)) / 50) * 50;
-  const rams = of("ram");
-  const ramChecks = rams.map((line) =>
-    compare(textSpec(line.component, "type"), textSpec(board, "ram_type")),
-  );
-  const ramSlots = numberSpec(board, "ram_slots");
-  const sticks = rams.map((line) => {
-    const n = numberSpec(line.component, "sticks");
-    return n === null ? null : n * line.quantity;
-  });
-  const storage = of("storage");
-  const storageSlots = numberSpec(board, "storage_slots");
+  const rams = of("ram"),
+    storage = of("storage"),
+    fans = of("fan");
+  const sumSpec = (entries: ResolvedLine[], key: string) => {
+    const values = entries.map((line) => {
+      const n = numberSpec(line.component, key);
+      return n === null ? null : n * line.quantity;
+    });
+    return values.length && values.every((n) => n !== null)
+      ? values.reduce<number>((sum, n) => sum + n!, 0)
+      : null;
+  };
+  const totalQuantity = (entries: ResolvedLine[]) =>
+    entries.reduce((sum, line) => sum + line.quantity, 0);
+  const storageCapacity: (boolean | null)[] = [
+    storage.length
+      ? atMost(totalQuantity(storage), numberSpec(board, "storage_slots", true))
+      : null,
+  ];
+  for (const [connector, key] of [
+    ["M.2", "m2_slots"],
+    ["SATA", "sata_ports"],
+  ]) {
+    const matching = storage.filter((line) => textSpec(line.component, "connector") === connector);
+    if (matching.length)
+      storageCapacity.push(atMost(totalQuantity(matching), numberSpec(board, key, true)));
+  }
+  if (
+    storage.some((line) => !["M.2", "SATA"].includes(textSpec(line.component, "connector") ?? ""))
+  )
+    storageCapacity.push(null);
+  const fanSizes = enclosure?.specs.fan_sizes_mm;
+  const supportedFanSizes =
+    Array.isArray(fanSizes) && fanSizes.every((value) => typeof value === "number" && value > 0)
+      ? (fanSizes as number[])
+      : null;
+  const fanCapacity: (boolean | null)[] = [
+    fans.length ? atMost(totalQuantity(fans), numberSpec(enclosure, "fan_slots", true)) : null,
+  ];
+  const diameters = new Set(fans.map((line) => numberSpec(line.component, "diameter_mm")));
+  for (const diameter of diameters) {
+    const matching = fans.filter((line) => numberSpec(line.component, "diameter_mm") === diameter);
+    fanCapacity.push(
+      diameter === null
+        ? null
+        : atMost(totalQuantity(matching), numberSpec(enclosure, `fan_mounts_${diameter}`, true)),
+    );
+  }
   const cooler = first("cooler");
-  const coolerSockets = cooler?.specs.sockets;
-  const socket = textSpec(cpu, "socket");
   const rules: Rule[] = [
     {
       id: "cpu",
@@ -272,58 +365,88 @@ export function compatibility(lines: ResolvedLine[], settings: Settings) {
     {
       id: "ram",
       categories: ["ram", "motherboard"],
-      ok: ramChecks.includes(false)
-        ? false
-        : ramChecks.length && ramChecks.every((check) => check === true)
-          ? true
-          : null,
+      ok: allChecks(
+        rams.map((line) => compare(textSpec(line.component, "type"), textSpec(board, "ram_type"))),
+      ),
     },
     {
       id: "gpu",
       categories: ["gpu", "case"],
-      ok: gpuLength !== null && clearance !== null ? gpuLength <= clearance : null,
+      ok: atMost(numberSpec(gpu, "length_mm"), numberSpec(enclosure, "max_gpu_length_mm")),
     },
     {
       id: "case",
       categories: ["motherboard", "case"],
-      ok:
-        form &&
-        Array.isArray(supported) &&
-        supported.length > 0 &&
-        supported.every((item) => typeof item === "string")
-          ? supported.includes(form)
-          : null,
+      ok: supports(textListSpec(enclosure, "mobo_support"), textSpec(board, "form_factor")),
     },
+    { id: "psu", categories: ["cpu", "gpu", "psu"], ok: atMost(recommended, watts) },
     {
-      id: "psu",
-      categories: ["cpu", "gpu", "psu"],
-      ok: recommended !== null && watts !== null ? watts >= recommended : null,
+      id: "psu_case",
+      categories: ["psu", "case"],
+      ok: supports(textListSpec(enclosure, "psu_support"), textSpec(psu, "form_factor")),
     },
     {
       id: "ram_capacity",
       categories: ["ram", "motherboard"],
-      ok:
-        ramSlots !== null && sticks.length && sticks.every((n) => n !== null)
-          ? sticks.reduce<number>((sum, n) => sum + n!, 0) <= ramSlots
-          : null,
-    },
-    {
-      id: "storage_capacity",
-      categories: ["storage", "motherboard"],
-      ok:
-        storage.length && storageSlots !== null
-          ? storage.reduce((sum, line) => sum + line.quantity, 0) <= storageSlots
-          : null,
-    },
-    {
-      id: "cooler",
-      categories: ["cpu", "cooler"],
-      ok:
-        socket && Array.isArray(coolerSockets) && coolerSockets.length > 0
-          ? coolerSockets.includes(socket)
-          : null,
+      ok: allChecks([
+        atMost(sumSpec(rams, "sticks"), numberSpec(board, "ram_slots", true)),
+        atMost(sumSpec(rams, "size_gb"), numberSpec(board, "max_ram_gb", true)),
+      ]),
     },
   ];
+  if (active("storage"))
+    rules.push(
+      {
+        id: "storage_capacity",
+        categories: ["storage", "motherboard"],
+        ok: allChecks(storageCapacity),
+      },
+      {
+        id: "storage_interface",
+        categories: ["storage", "motherboard"],
+        ok: allChecks(
+          storage.flatMap((line) => [
+            supports(
+              textListSpec(board, "storage_interfaces"),
+              textSpec(line.component, "interface"),
+            ),
+            supports(
+              textListSpec(board, "storage_connectors"),
+              textSpec(line.component, "connector"),
+            ),
+          ]),
+        ),
+      },
+    );
+  if (active("cooler"))
+    rules.push(
+      {
+        id: "cooler",
+        categories: ["cpu", "cooler"],
+        ok: supports(textListSpec(cooler, "sockets"), textSpec(cpu, "socket")),
+      },
+      {
+        id: "cooler_clearance",
+        categories: ["cooler", "case"],
+        ok: atMost(
+          numberSpec(cooler, "height_mm"),
+          numberSpec(enclosure, "max_cpu_cooler_height_mm"),
+        ),
+      },
+    );
+  if (active("fan"))
+    rules.push(
+      {
+        id: "fan_size",
+        categories: ["fan", "case"],
+        ok: allChecks(
+          fans.map((line) =>
+            supports(supportedFanSizes, numberSpec(line.component, "diameter_mm")),
+          ),
+        ),
+      },
+      { id: "fan_capacity", categories: ["fan", "case"], ok: allChecks(fanCapacity) },
+    );
   return {
     rules,
     conflicts: rules.some((rule) => rule.ok === false),
@@ -386,17 +509,22 @@ export function evaluateBuild(input: Build, components: Component[], settings: S
           { net: 0, tax: 0, gross: 0 },
         );
   const checks = compatibility(resolved, settings);
+  const missingRequiredSlots = settings.global.slots
+    .filter((slot) => slot.required && !resolved.some((line) => line.slot === slot.id))
+    .map((slot) => slot.id);
   return {
     lines,
     total,
     issues,
     compatibility: {
       ...checks,
-      pending: checks.pending || issues.some((issue) => issue.code !== "price_unavailable"),
+      pending:
+        checks.pending ||
+        missingRequiredSlots.length > 0 ||
+        issues.some((issue) => issue.code !== "price_unavailable"),
     },
-    complete: settings.global.slots
-      .filter((slot) => slot.required)
-      .every((slot) => resolved.some((line) => line.slot === slot.id)),
+    missingRequiredSlots,
+    complete: missingRequiredSlots.length === 0,
   };
 }
 const LocaleKeySchema = TextKeySchema;

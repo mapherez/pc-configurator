@@ -1,0 +1,62 @@
+[
+  {
+    "id": "fan-demo-120",
+    "sku": "FAN-DEMO-120",
+    "name": "Demo Air 120",
+    "brand": "Demo",
+    "category": "fan",
+    "status": "published",
+    "images": [],
+    "specs": {
+      "diameter_mm": 120
+    },
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 1200,
+        "available": true
+      }
+    ]
+  },
+  {
+    "id": "fan-demo-140",
+    "sku": "FAN-DEMO-140",
+    "name": "Demo Air 140",
+    "brand": "Demo",
+    "category": "fan",
+    "status": "published",
+    "images": [],
+    "specs": {
+      "diameter_mm": 140
+    },
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 1600,
+        "available": true
+      }
+    ]
+  },
+  {
+    "id": "fan-demo-120-rgb",
+    "sku": "FAN-DEMO-120-RGB",
+    "name": "Demo Air 120 RGB",
+    "brand": "Demo",
+    "category": "fan",
+    "status": "published",
+    "images": [],
+    "specs": {
+      "diameter_mm": 120
+    },
+    "offers": [
+      {
+        "market": "pt",
+        "currency": "EUR",
+        "netMinor": 2200,
+        "available": false
+      }
+    ]
+  }
+]

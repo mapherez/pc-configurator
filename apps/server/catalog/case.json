@@ -8,7 +8,13 @@
     "images": ["/images/case/mesh-atx.png"],
     "specs": {
       "max_gpu_length_mm": 360,
-      "mobo_support": ["ATX", "mATX", "ITX"]
+      "mobo_support": ["ATX", "mATX", "ITX"],
+      "max_cpu_cooler_height_mm": 165,
+      "psu_support": ["ATX"],
+      "fan_slots": 6,
+      "fan_sizes_mm": [120, 140],
+      "fan_mounts_120": 6,
+      "fan_mounts_140": 4
     },
     "status": "published",
     "offers": [
@@ -29,7 +35,13 @@
     "images": ["/images/case/compact-itx.png"],
     "specs": {
       "max_gpu_length_mm": 320,
-      "mobo_support": ["ITX"]
+      "mobo_support": ["ITX"],
+      "max_cpu_cooler_height_mm": 70,
+      "psu_support": ["SFX"],
+      "fan_slots": 2,
+      "fan_sizes_mm": [120],
+      "fan_mounts_120": 2,
+      "fan_mounts_140": 0
     },
     "status": "published",
     "offers": [
